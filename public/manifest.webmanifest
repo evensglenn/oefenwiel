@@ -1,0 +1,13 @@
+{
+  "name": "Oefenwiel",
+  "short_name": "Oefenwiel",
+  "start_url": "/oefenwiel/",
+  "scope": "/oefenwiel/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    { "src": "/oefenwiel/icons/icon-192-padded.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/oefenwiel/icons/icon-512-padded.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
