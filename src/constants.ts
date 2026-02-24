@@ -41,6 +41,13 @@ export const INITIAL_SONGS: Song[] = [
   { id: "s3-2", title: "Greensleeves", bookId: "suzuki-3" },
   { id: "s3-3", title: "Packington's Pound", bookId: "suzuki-3" },
   { id: "s3-4", title: "Ghiribizzo", bookId: "suzuki-3" },
+  { id: "s3-5", title: "Waltz", bookId: "suzuki-3" },
+  { id: "s3-6", title: "Andantino", bookId: "suzuki-3" },
+  { id: "s3-7", title: "Calliope", bookId: "suzuki-3" },
+  { id: "s3-8", title: "Etude (8)", bookId: "suzuki-3" },
+  { id: "s3-9", title: "Etude (9)", bookId: "suzuki-3" },
+  { id: "s3-10", title: "Arietta", bookId: "suzuki-3" },
+  { id: "s3-11", title: "Celeste y Blanco", bookId: "suzuki-3" },
 
   // Andere
   { id: "sa-1", title: "Onder de zee (gitaarkamp)", bookId: "andere" },
