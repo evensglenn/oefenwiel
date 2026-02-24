@@ -168,13 +168,13 @@ export default function App() {
             <h1 className="text-xl font-bold tracking-tight">Oefenwiel</h1>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="flex bg-zinc-100 p-1 rounded-lg">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex bg-zinc-100 p-1 rounded-lg overflow-hidden">
               {profiles.map(p => (
                 <button
                   key={p.id}
                   onClick={() => setActiveProfileId(p.id)}
-                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                  className={`px-2 sm:px-4 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all truncate max-w-[80px] sm:max-w-[120px] ${
                     activeProfileId === p.id 
                       ? 'bg-white text-indigo-600 shadow-sm' 
                       : 'text-zinc-500 hover:text-zinc-800'
@@ -194,11 +194,11 @@ export default function App() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <main className="max-w-5xl mx-auto px-4 py-4 sm:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           
           {/* Left Column: Wheel */}
-          <div className="lg:col-span-7 flex flex-col items-center justify-center min-h-[600px]">
+          <div className="lg:col-span-7 flex flex-col items-center justify-center min-h-[350px] sm:min-h-[500px] lg:min-h-[600px]">
             {wheelItems.length > 0 ? (
               <Wheel 
                 items={wheelItems} 
