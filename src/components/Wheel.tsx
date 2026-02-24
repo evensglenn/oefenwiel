@@ -14,10 +14,31 @@ const COLORS = [
 ];
 
 export const Wheel: React.FC<WheelProps> = ({ items, onFinish, isSpinning, setIsSpinning }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [rotation, setRotation] = useState(0);
   const [winner, setWinner] = useState<string | null>(null);
+  const [size, setSize] = useState(400);
   
+  useEffect(() => {
+    if (!containerRef.current) return;
+    
+    const observer = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        const { width } = entry.contentRect;
+        // On mobile, we want it to be responsive but not too tiny
+        // On desktop, we cap it at 400
+        const newSize = Math.min(width - 32, 400);
+        if (newSize > 0) {
+          setSize(newSize);
+        }
+      }
+    });
+
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   const spinRef = useRef({
     startRotation: 0,
     targetRotation: 0,
@@ -31,12 +52,12 @@ export const Wheel: React.FC<WheelProps> = ({ items, onFinish, isSpinning, setIs
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const size = canvas.width;
-    const center = size / 2;
-    const radius = size / 2 - 10;
+    const canvasSize = canvas.width;
+    const center = canvasSize / 2;
+    const radius = canvasSize / 2 - 10;
     const sliceAngle = (2 * Math.PI) / items.length;
 
-    ctx.clearRect(0, 0, size, size);
+    ctx.clearRect(0, 0, canvasSize, canvasSize);
 
     items.forEach((item, i) => {
       const angle = currentRotation + i * sliceAngle;
@@ -58,14 +79,16 @@ export const Wheel: React.FC<WheelProps> = ({ items, onFinish, isSpinning, setIs
       ctx.rotate(angle + sliceAngle / 2);
       ctx.textAlign = 'right';
       ctx.fillStyle = '#fff';
-      ctx.font = 'bold 14px Inter';
+      // Scale font size slightly with wheel size
+      const fontSize = Math.max(10, Math.floor(canvasSize / 28));
+      ctx.font = `bold ${fontSize}px Inter`;
       ctx.fillText(item.length > 15 ? item.substring(0, 12) + '...' : item, radius - 20, 5);
       ctx.restore();
     });
 
     // Draw center pin
     ctx.beginPath();
-    ctx.arc(center, center, 15, 0, 2 * Math.PI);
+    ctx.arc(center, center, canvasSize / 25, 0, 2 * Math.PI);
     ctx.fillStyle = '#333';
     ctx.fill();
     ctx.strokeStyle = '#fff';
@@ -75,7 +98,7 @@ export const Wheel: React.FC<WheelProps> = ({ items, onFinish, isSpinning, setIs
 
   useEffect(() => {
     drawWheel(rotation);
-  }, [items, rotation]);
+  }, [items, rotation, size]);
 
   const spin = () => {
     if (isSpinning || items.length === 0) return;
@@ -123,12 +146,12 @@ export const Wheel: React.FC<WheelProps> = ({ items, onFinish, isSpinning, setIs
   };
 
   return (
-    <div className="flex flex-col items-center">
+    <div ref={containerRef} className="flex flex-col items-center w-full max-w-[450px]">
       <div className="relative">
         {/* Pointer */}
         <div className="absolute top-1/2 -right-2 -translate-y-1/2 z-20">
           <div 
-            className="w-10 h-10 bg-zinc-800 shadow-lg" 
+            className="w-8 h-8 sm:w-10 sm:h-10 bg-zinc-800 shadow-lg" 
             style={{ 
               clipPath: 'polygon(100% 0%, 0% 50%, 100% 100%)',
               filter: 'drop-shadow(-2px 0px 2px rgba(0,0,0,0.2))'
@@ -136,11 +159,11 @@ export const Wheel: React.FC<WheelProps> = ({ items, onFinish, isSpinning, setIs
           ></div>
         </div>
 
-        <div className="bg-white p-4 rounded-full shadow-2xl border-8 border-zinc-800">
+        <div className="bg-white p-2 sm:p-4 rounded-full shadow-2xl border-4 sm:border-8 border-zinc-800">
           <canvas 
             ref={canvasRef} 
-            width={400} 
-            height={400} 
+            width={size} 
+            height={size} 
             className="rounded-full"
           />
         </div>
