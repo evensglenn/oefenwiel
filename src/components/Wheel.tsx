@@ -80,9 +80,12 @@ export const Wheel: React.FC<WheelProps> = ({ items, onFinish, isSpinning, setIs
       ctx.textAlign = 'right';
       ctx.fillStyle = '#fff';
       // Scale font size slightly with wheel size
-      const fontSize = Math.max(10, Math.floor(canvasSize / 28));
+      const fontSize = Math.max(9, Math.floor(canvasSize / 32));
       ctx.font = `bold ${fontSize}px Inter`;
-      ctx.fillText(item.length > 15 ? item.substring(0, 12) + '...' : item, radius - 20, 5);
+      // Show more characters for longer strings
+      const maxChars = Math.floor(canvasSize / 15);
+      const displayItem = item.length > maxChars ? item.substring(0, maxChars - 3) + '...' : item;
+      ctx.fillText(displayItem, radius - 15, fontSize / 3);
       ctx.restore();
     });
 
@@ -189,7 +192,20 @@ export const Wheel: React.FC<WheelProps> = ({ items, onFinish, isSpinning, setIs
             className="mt-6 text-center"
           >
             <h3 className="text-sm uppercase tracking-widest text-zinc-500 font-semibold">Vandaag oefenen we:</h3>
-            <p className="text-3xl font-black text-zinc-900 mt-1">{winner}</p>
+            <div className="mt-1">
+              {winner.includes('(') ? (
+                <>
+                  <p className="text-3xl font-black text-zinc-900">
+                    {winner.substring(0, winner.lastIndexOf('(')).trim()}
+                  </p>
+                  <p className="text-lg font-medium text-indigo-600">
+                    {winner.substring(winner.lastIndexOf('(') + 1, winner.lastIndexOf(')'))}
+                  </p>
+                </>
+              ) : (
+                <p className="text-3xl font-black text-zinc-900">{winner}</p>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
