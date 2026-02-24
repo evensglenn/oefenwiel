@@ -7,9 +7,9 @@ import { Users, Settings, Music, Trophy, Plus, Trash2, Edit2, Save, X, BookOpen 
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'motion/react';
 
-const PROFILES_KEY = 'guitar_practice_profiles_v5';
-const BOOKS_KEY = 'guitar_practice_books_v5';
-const SONGS_KEY = 'guitar_practice_songs_v5';
+const PROFILES_KEY = 'guitar_practice_profiles_v6';
+const BOOKS_KEY = 'guitar_practice_books_v6';
+const SONGS_KEY = 'guitar_practice_songs_v6';
 
 export default function App() {
   // Data State
