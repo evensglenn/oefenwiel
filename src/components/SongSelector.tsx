@@ -91,7 +91,7 @@ export const SongSelector: React.FC<SongSelectorProps> = ({
                   exit={{ height: 0, opacity: 0 }}
                   className="overflow-hidden bg-zinc-50/50"
                 >
-                  <div className="p-2 pl-12 space-y-1">
+                  <div className="p-2 pl-8 sm:pl-12 space-y-1">
                     {bookSongs.map((song) => {
                       const isSelected = selectedSongIds.includes(song.id);
                       return (
