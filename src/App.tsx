@@ -64,8 +64,11 @@ export default function App() {
   const wheelItems = useMemo(() => {
     return songs
       .filter(s => activeProfile.selectedSongIds.includes(s.id))
-      .map(s => s.title);
-  }, [activeProfile, songs]);
+      .map(s => {
+        const book = books.find(b => b.id === s.bookId);
+        return `${s.title} (${book?.title || '?'})`;
+      });
+  }, [activeProfile, songs, books]);
 
   // Handlers
   const handleToggleSong = (songId: string) => {
