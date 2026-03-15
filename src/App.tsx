@@ -444,7 +444,7 @@ export default function App() {
               Deze app is met behulp van AI gemaakt door Glenn Evens.
             </p>
             <p className="text-[10px] text-zinc-400 font-mono mt-1">
-              v1.1.3
+              v1.1.7
             </p>
           </div>
         </div>
