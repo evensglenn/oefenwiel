@@ -6,6 +6,8 @@ interface WheelProps {
   onFinish: (item: string) => void;
   isSpinning: boolean;
   setIsSpinning: (spinning: boolean) => void;
+  soundEnabled: boolean;
+  voiceEnabled: boolean;
 }
 
 const COLORS = [
@@ -13,7 +15,14 @@ const COLORS = [
   '#F7DC6F', '#BB8FCE', '#82E0AA', '#F1948A', '#85C1E9'
 ];
 
-export const Wheel: React.FC<WheelProps> = ({ items, onFinish, isSpinning, setIsSpinning }) => {
+export const Wheel: React.FC<WheelProps> = ({ 
+  items, 
+  onFinish, 
+  isSpinning, 
+  setIsSpinning,
+  soundEnabled,
+  voiceEnabled
+}) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -131,7 +140,7 @@ export const Wheel: React.FC<WheelProps> = ({ items, onFinish, isSpinning, setIs
   }, [items, rotation, size]);
 
   const announceWinner = (text: string) => {
-    if (!window.speechSynthesis) return;
+    if (!window.speechSynthesis || !voiceEnabled) return;
 
     // Format: "Song Title uit Book Title"
     let announcement = text;
@@ -184,7 +193,7 @@ export const Wheel: React.FC<WheelProps> = ({ items, onFinish, isSpinning, setIs
         const result = items[winningIndex];
         
         // Play success sound
-        if (audioRef.current) {
+        if (audioRef.current && soundEnabled) {
           audioRef.current.currentTime = 0;
           audioRef.current.play().catch(() => {});
         }
@@ -192,7 +201,7 @@ export const Wheel: React.FC<WheelProps> = ({ items, onFinish, isSpinning, setIs
         // Announce winner with a slight delay so it doesn't overlap with the success sound
         setTimeout(() => {
           announceWinner(result);
-        }, 1200);
+        }, 1700);
 
         setWinner(result);
         onFinish(result);

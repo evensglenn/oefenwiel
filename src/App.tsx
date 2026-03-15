@@ -3,13 +3,15 @@ import { Wheel } from './components/Wheel';
 import { SongSelector } from './components/SongSelector';
 import { INITIAL_BOOKS, INITIAL_SONGS } from './constants';
 import { Profile, Book, Song } from './types';
-import { Users, Settings, Music, Trophy, Plus, Trash2, Edit2, Save, X, BookOpen } from 'lucide-react';
+import { Users, Settings, Music, Trophy, Plus, Trash2, Edit2, Save, X, BookOpen, Volume2, VolumeX, Mic, MicOff } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'motion/react';
 
 const PROFILES_KEY = 'guitar_practice_profiles_v6';
 const BOOKS_KEY = 'guitar_practice_books_v6';
 const SONGS_KEY = 'guitar_practice_songs_v6';
+const SOUND_KEY = 'guitar_practice_sound_v1';
+const VOICE_KEY = 'guitar_practice_voice_v1';
 
 export default function App() {
   // Data State
@@ -35,7 +37,17 @@ export default function App() {
   const [activeProfileId, setActiveProfileId] = useState<string>(profiles[0].id);
   const [isSpinning, setIsSpinning] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [activeTab, setActiveTab] = useState<'profiles' | 'data'>('profiles');
+  const [activeTab, setActiveTab] = useState<'profiles' | 'data' | 'settings'>('profiles');
+
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
+    const saved = localStorage.getItem(SOUND_KEY);
+    return saved ? JSON.parse(saved) : true;
+  });
+
+  const [voiceEnabled, setVoiceEnabled] = useState<boolean>(() => {
+    const saved = localStorage.getItem(VOICE_KEY);
+    return saved ? JSON.parse(saved) : true;
+  });
 
   // Editing State
   const [editingBookId, setEditingBookId] = useState<string | null>(null);
@@ -56,6 +68,14 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem(SONGS_KEY, JSON.stringify(songs));
   }, [songs]);
+
+  useEffect(() => {
+    localStorage.setItem(SOUND_KEY, JSON.stringify(soundEnabled));
+  }, [soundEnabled]);
+
+  useEffect(() => {
+    localStorage.setItem(VOICE_KEY, JSON.stringify(voiceEnabled));
+  }, [voiceEnabled]);
 
   const activeProfile = useMemo(() => 
     profiles.find(p => p.id === activeProfileId) || profiles[0],
@@ -106,6 +126,24 @@ export default function App() {
 
   const updateProfileName = (id: string, name: string) => {
     setProfiles(prev => prev.map(p => p.id === id ? { ...p, name } : p));
+  };
+
+  const addProfile = () => {
+    const newProfile: Profile = {
+      id: `kind-${Date.now()}`,
+      name: `Kind ${profiles.length + 1}`,
+      selectedSongIds: songs.map(s => s.id)
+    };
+    setProfiles([...profiles, newProfile]);
+  };
+
+  const deleteProfile = (id: string) => {
+    if (profiles.length <= 1) return;
+    const newProfiles = profiles.filter(p => p.id !== id);
+    setProfiles(newProfiles);
+    if (activeProfileId === id) {
+      setActiveProfileId(newProfiles[0].id);
+    }
   };
 
   // Book Management
@@ -208,6 +246,8 @@ export default function App() {
                 onFinish={handleWheelFinish}
                 isSpinning={isSpinning}
                 setIsSpinning={setIsSpinning}
+                soundEnabled={soundEnabled}
+                voiceEnabled={voiceEnabled}
               />
             ) : (
               <div className="text-center p-12 bg-white rounded-3xl border-2 border-dashed border-zinc-200 max-w-md">
@@ -246,6 +286,12 @@ export default function App() {
                     >
                       Liedjes & Boeken
                     </button>
+                    <button 
+                      onClick={() => setActiveTab('settings')}
+                      className={`flex-1 py-4 text-sm font-bold transition-colors ${activeTab === 'settings' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-zinc-400 hover:text-zinc-600'}`}
+                    >
+                      Instellingen
+                    </button>
                   </div>
 
                   <div className="p-6">
@@ -254,7 +300,7 @@ export default function App() {
                         <div className="flex items-center justify-between">
                           <h2 className="text-lg font-bold flex items-center gap-2">
                             <Users size={20} className="text-indigo-500" />
-                            Profiel Instellingen
+                            Profielen
                           </h2>
                           <button 
                             onClick={() => setShowSettings(false)}
@@ -265,11 +311,22 @@ export default function App() {
                         </div>
                         
                         <div className="space-y-4">
-                          {profiles.map(p => (
+                          {profiles.map((p, index) => (
                             <div key={p.id} className="space-y-2">
-                              <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
-                                Naam van {p.id === 'kind-1' ? 'Kind 1' : 'Kind 2'}
-                              </label>
+                              <div className="flex items-center justify-between">
+                                <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                                  Naam van Kind {index + 1}
+                                </label>
+                                {profiles.length > 1 && (
+                                  <button 
+                                    onClick={() => deleteProfile(p.id)}
+                                    className="p-1 text-zinc-400 hover:text-red-500 transition-colors"
+                                    title="Profiel verwijderen"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                )}
+                              </div>
                               <input 
                                 type="text"
                                 value={p.name}
@@ -279,6 +336,14 @@ export default function App() {
                               />
                             </div>
                           ))}
+                          
+                          <button 
+                            onClick={addProfile}
+                            className="w-full py-3 border-2 border-dashed border-zinc-200 rounded-xl text-zinc-400 font-bold text-sm hover:border-indigo-300 hover:text-indigo-500 transition-all flex items-center justify-center gap-2"
+                          >
+                            <Plus size={18} />
+                            Kind Toevoegen
+                          </button>
                         </div>
 
                         <div className="mt-8 p-4 bg-indigo-50 rounded-xl border border-indigo-100">
@@ -291,9 +356,21 @@ export default function App() {
                           </p>
                         </div>
                       </div>
-                    ) : (
+                    ) : activeTab === 'data' ? (
                       <div className="space-y-8">
-                        {/* Books Management */}
+                        <div className="flex items-center justify-between">
+                          <h2 className="text-lg font-bold flex items-center gap-2">
+                            <BookOpen size={20} className="text-indigo-500" />
+                            Liedjes & Boeken
+                          </h2>
+                          <button 
+                            onClick={() => setShowSettings(false)}
+                            className="text-sm text-indigo-600 font-medium hover:underline"
+                          >
+                            Klaar
+                          </button>
+                        </div>
+                        
                         <section className="space-y-4">
                           <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
                             <BookOpen size={16} />
@@ -392,6 +469,69 @@ export default function App() {
                           </div>
                         </section>
                       </div>
+                    ) : (
+                      <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                          <h2 className="text-lg font-bold flex items-center gap-2">
+                            <Settings size={20} className="text-indigo-500" />
+                            App Instellingen
+                          </h2>
+                          <button 
+                            onClick={() => setShowSettings(false)}
+                            className="text-sm text-indigo-600 font-medium hover:underline"
+                          >
+                            Klaar
+                          </button>
+                        </div>
+
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between p-4 bg-zinc-50 rounded-2xl border border-zinc-100">
+                            <div className="flex items-center gap-3">
+                              <div className={`p-2 rounded-xl transition-colors ${soundEnabled ? 'bg-indigo-100 text-indigo-600' : 'bg-zinc-200 text-zinc-500'}`}>
+                                {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold">Overwinningsgeluid</p>
+                                <p className="text-xs text-zinc-500">Speel een geluidje als het wiel stopt</p>
+                              </div>
+                            </div>
+                            <button 
+                              onClick={() => setSoundEnabled(!soundEnabled)}
+                              className={`w-12 h-6 rounded-full transition-colors relative ${soundEnabled ? 'bg-indigo-600' : 'bg-zinc-300'}`}
+                            >
+                              <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${soundEnabled ? 'left-7' : 'left-1'}`} />
+                            </button>
+                          </div>
+
+                          <div className="flex items-center justify-between p-4 bg-zinc-50 rounded-2xl border border-zinc-100">
+                            <div className="flex items-center gap-3">
+                              <div className={`p-2 rounded-xl transition-colors ${voiceEnabled ? 'bg-indigo-100 text-indigo-600' : 'bg-zinc-200 text-zinc-500'}`}>
+                                {voiceEnabled ? <Mic size={20} /> : <MicOff size={20} />}
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold">Liedje uitspreken</p>
+                                <p className="text-xs text-zinc-500">De stem vertelt welk liedje gekozen is</p>
+                              </div>
+                            </div>
+                            <button 
+                              onClick={() => setVoiceEnabled(!voiceEnabled)}
+                              className={`w-12 h-6 rounded-full transition-colors relative ${voiceEnabled ? 'bg-indigo-600' : 'bg-zinc-300'}`}
+                            >
+                              <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${voiceEnabled ? 'left-7' : 'left-1'}`} />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="mt-8 p-4 bg-zinc-50 rounded-xl border border-zinc-100">
+                          <p className="text-[10px] text-zinc-400 text-center uppercase tracking-widest font-bold">
+                            Systeem Info
+                          </p>
+                          <div className="flex justify-between mt-2 text-[10px] font-mono text-zinc-500">
+                            <span>Versie</span>
+                            <span>v1.4.0</span>
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </motion.div>
@@ -460,7 +600,7 @@ export default function App() {
                 Powered by AI
               </span>
               <span className="text-[10px] text-zinc-400 font-mono">
-                v1.2.3
+                v1.4.0
               </span>
             </div>
           </div>
