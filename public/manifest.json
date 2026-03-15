@@ -2,7 +2,7 @@
   "name": "Oefenwiel Gitaar",
   "short_name": "Oefenwiel",
   "description": "Interactief gitaar oefenwiel voor kinderen",
-  "start_url": "/",
+  "start_url": "/oefenwiel/",
   "display": "standalone",
   "background_color": "#f9fafb",
   "theme_color": "#4f46e5",

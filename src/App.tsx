@@ -431,7 +431,7 @@ export default function App() {
 
       {/* Footer / Stats */}
       <footer className="max-w-5xl mx-auto px-4 py-12 border-t border-zinc-200 mt-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-2">
             <h4 className="font-bold text-zinc-400 text-xs uppercase tracking-widest">Over</h4>
             <p className="text-sm text-zinc-500 leading-relaxed">
@@ -439,25 +439,12 @@ export default function App() {
             </p>
           </div>
           <div className="space-y-2">
-            <h4 className="font-bold text-zinc-400 text-xs uppercase tracking-widest">Statistieken</h4>
-            <div className="flex gap-4">
-              <div className="bg-white p-3 rounded-xl border border-zinc-200 flex-1">
-                <div className="text-2xl font-black text-indigo-600">{books.length}</div>
-                <div className="text-[10px] text-zinc-400 font-bold uppercase">Boeken</div>
-              </div>
-              <div className="bg-white p-3 rounded-xl border border-zinc-200 flex-1">
-                <div className="text-2xl font-black text-indigo-600">{songs.length}</div>
-                <div className="text-[10px] text-zinc-400 font-bold uppercase">Totaal Liedjes</div>
-              </div>
-            </div>
-          </div>
-          <div className="space-y-2">
             <h4 className="font-bold text-zinc-400 text-xs uppercase tracking-widest">Maker</h4>
             <p className="text-sm text-zinc-500">
               Deze app is met behulp van AI gemaakt door Glenn Evens.
             </p>
             <p className="text-[10px] text-zinc-400 font-mono mt-1">
-              v1.1.1
+              v1.1.3
             </p>
           </div>
         </div>
