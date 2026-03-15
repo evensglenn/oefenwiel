@@ -189,8 +189,10 @@ export const Wheel: React.FC<WheelProps> = ({ items, onFinish, isSpinning, setIs
           audioRef.current.play().catch(() => {});
         }
 
-        // Announce winner
-        announceWinner(result);
+        // Announce winner with a slight delay so it doesn't overlap with the success sound
+        setTimeout(() => {
+          announceWinner(result);
+        }, 1200);
 
         setWinner(result);
         onFinish(result);
