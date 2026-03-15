@@ -460,7 +460,7 @@ export default function App() {
                 Powered by AI
               </span>
               <span className="text-[10px] text-zinc-400 font-mono">
-                v1.1.9
+                v1.2.0
               </span>
             </div>
           </div>

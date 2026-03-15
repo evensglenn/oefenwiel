@@ -23,7 +23,7 @@ export const Wheel: React.FC<WheelProps> = ({ items, onFinish, isSpinning, setIs
 
   // Initialize audio
   useEffect(() => {
-    const audio = new Audio(`${import.meta.env.BASE_URL}succes-rune.mp3`);
+    const audio = new Audio(`${import.meta.env.BASE_URL}success-rune.mp3`);
     audio.preload = 'auto';
     audioRef.current = audio;
 
