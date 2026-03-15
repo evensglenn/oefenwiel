@@ -406,7 +406,7 @@ export default function App() {
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-bold flex items-center gap-2">
                       <Music size={20} className="text-indigo-500" />
-                      Liedjes Selecteren
+                      Liedjes selecteren
                     </h2>
                     <div className="text-xs font-medium text-zinc-400">
                       {activeProfile.selectedSongIds.length} / {songs.length} geselecteerd
@@ -460,7 +460,7 @@ export default function App() {
                 Powered by AI
               </span>
               <span className="text-[10px] text-zinc-400 font-mono">
-                v1.2.2
+                v1.2.3
               </span>
             </div>
           </div>

@@ -234,7 +234,7 @@ export const Wheel: React.FC<WheelProps> = ({ items, onFinish, isSpinning, setIs
             ? 'bg-zinc-400 cursor-not-allowed' 
             : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
       >
-        {isSpinning ? 'DRAAIEN...' : 'DRAAI AAN HET WIEL!'}
+        {isSpinning ? 'Draaien...' : 'Draai aan het wiel'}
       </button>
 
       <AnimatePresence>
