@@ -248,7 +248,7 @@ export default function App() {
                     </button>
                   </div>
 
-                  <div className="p-6 max-h-[calc(100vh-250px)] overflow-y-auto custom-scrollbar">
+                  <div className="p-6">
                     {activeTab === 'profiles' ? (
                       <div className="space-y-6">
                         <div className="flex items-center justify-between">
@@ -413,7 +413,7 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="max-h-[calc(100vh-250px)] overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="pr-2">
                     <SongSelector 
                       books={books}
                       songs={songs}
@@ -429,23 +429,40 @@ export default function App() {
         </div>
       </main>
 
-      {/* Footer / Stats */}
-      <footer className="max-w-5xl mx-auto px-4 py-12 border-t border-zinc-200 mt-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="space-y-2">
-            <h4 className="font-bold text-zinc-400 text-xs uppercase tracking-widest">Over</h4>
+      {/* Footer */}
+      <footer className="max-w-5xl mx-auto px-4 py-16 mt-12 border-t border-zinc-200">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+          <div className="space-y-3 max-w-sm">
+            <div className="flex items-center gap-2 text-zinc-900">
+              <div className="w-6 h-6 bg-zinc-100 rounded-md flex items-center justify-center">
+                <Music size={14} className="text-zinc-600" />
+              </div>
+              <span className="font-bold tracking-tight">Oefenwiel</span>
+            </div>
             <p className="text-sm text-zinc-500 leading-relaxed">
-              Een eenvoudig hulpmiddel om gitaar oefenen leuker te maken. Draai aan het wiel om je volgende liedje te kiezen!
+              Een slimme gitaar-tool die oefenen leuker maakt door variatie en spelplezier te combineren.
             </p>
           </div>
-          <div className="space-y-2">
-            <h4 className="font-bold text-zinc-400 text-xs uppercase tracking-widest">Maker</h4>
-            <p className="text-sm text-zinc-500">
-              Deze app is met behulp van AI gemaakt door Glenn Evens.
-            </p>
-            <p className="text-[10px] text-zinc-400 font-mono mt-1">
-              v1.1.7
-            </p>
+
+          <div className="flex flex-col items-start md:items-end gap-2">
+            <div className="flex items-center gap-1.5 text-sm font-medium text-zinc-600">
+              <span>Gemaakt met</span>
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <Trophy size={14} className="text-indigo-500" />
+              </motion.div>
+              <span>door Glenn Evens</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-bold rounded-full uppercase tracking-wider">
+                Powered by AI
+              </span>
+              <span className="text-[10px] text-zinc-400 font-mono">
+                v1.1.9
+              </span>
+            </div>
           </div>
         </div>
       </footer>
