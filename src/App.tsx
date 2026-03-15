@@ -456,6 +456,9 @@ export default function App() {
             <p className="text-sm text-zinc-500">
               Deze app is met behulp van AI gemaakt door Glenn Evens.
             </p>
+            <p className="text-[10px] text-zinc-400 font-mono mt-1">
+              v1.1.1
+            </p>
           </div>
         </div>
       </footer>

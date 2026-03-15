@@ -16,9 +16,36 @@ const COLORS = [
 export const Wheel: React.FC<WheelProps> = ({ items, onFinish, isSpinning, setIsSpinning }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [rotation, setRotation] = useState(0);
   const [winner, setWinner] = useState<string | null>(null);
   const [size, setSize] = useState(400);
+
+  // Initialize audio
+  useEffect(() => {
+    const audio = new Audio('/succes-rune.mp3');
+    audio.preload = 'auto';
+    audioRef.current = audio;
+
+    // Pre-unlock audio for mobile devices on first interaction
+    const unlockAudio = () => {
+      if (audioRef.current) {
+        audioRef.current.play().then(() => {
+          audioRef.current?.pause();
+          audioRef.current!.currentTime = 0;
+        }).catch(() => {});
+      }
+      window.removeEventListener('click', unlockAudio);
+      window.removeEventListener('touchstart', unlockAudio);
+    };
+    window.addEventListener('click', unlockAudio);
+    window.addEventListener('touchstart', unlockAudio);
+
+    return () => {
+      window.removeEventListener('click', unlockAudio);
+      window.removeEventListener('touchstart', unlockAudio);
+    };
+  }, []);
   
   useEffect(() => {
     if (!containerRef.current) return;
@@ -103,6 +130,24 @@ export const Wheel: React.FC<WheelProps> = ({ items, onFinish, isSpinning, setIs
     drawWheel(rotation);
   }, [items, rotation, size]);
 
+  const announceWinner = (text: string) => {
+    if (!window.speechSynthesis) return;
+
+    // Format: "Song Title uit Book Title"
+    let announcement = text;
+    if (text.includes('(')) {
+      const song = text.substring(0, text.lastIndexOf('(')).trim();
+      const book = text.substring(text.lastIndexOf('(') + 1, text.lastIndexOf(')'));
+      announcement = `${song} uit ${book}`;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(announcement);
+    utterance.lang = 'nl-NL'; // Dutch
+    utterance.rate = 0.9;
+    utterance.pitch = 1.1;
+    window.speechSynthesis.speak(utterance);
+  };
+
   const spin = () => {
     if (isSpinning || items.length === 0) return;
 
@@ -135,11 +180,18 @@ export const Wheel: React.FC<WheelProps> = ({ items, onFinish, isSpinning, setIs
         setIsSpinning(false);
         const finalRotation = currentRotation % (2 * Math.PI);
         const sliceAngle = (2 * Math.PI) / items.length;
-        // The pointer is at the right (0 radians). 
-        // We need to find which slice is at the pointer.
-        // Since we rotate the wheel clockwise, the slices pass the pointer in reverse order.
         const winningIndex = Math.floor((2 * Math.PI - finalRotation) / sliceAngle) % items.length;
         const result = items[winningIndex];
+        
+        // Play success sound
+        if (audioRef.current) {
+          audioRef.current.currentTime = 0;
+          audioRef.current.play().catch(() => {});
+        }
+
+        // Announce winner
+        announceWinner(result);
+
         setWinner(result);
         onFinish(result);
       }
