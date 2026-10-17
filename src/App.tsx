@@ -307,32 +307,6 @@ export default function App() {
     setEditingSongId(null);
   };
 
-  const themeToggle = (
-    <div className="inline-flex items-center p-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/60 dark:border-zinc-700/60">
-      {THEME_OPTIONS.map(opt => {
-        const Icon = opt.icon;
-        const isActive = theme === opt.value;
-        return (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => setTheme(opt.value)}
-            aria-label={opt.label}
-            aria-pressed={isActive}
-            title={opt.label}
-            className={`p-1 rounded-full transition-colors ${
-              isActive
-                ? 'bg-white dark:bg-zinc-600 text-accent-600 dark:text-accent-300 shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300'
-            }`}
-          >
-            <Icon size={12} />
-          </button>
-        );
-      })}
-    </div>
-  );
-
   return (
     <div data-instrument={activeInstrument?.id} className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 font-sans transition-colors duration-300">
       {/* Header */}
@@ -345,43 +319,72 @@ export default function App() {
             <h1 className="text-xl font-bold tracking-tight">Oefenwiel</h1>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4">
-            <div className="hidden sm:block">{themeToggle}</div>
-            <div className="flex bg-zinc-100 dark:bg-zinc-800 p-1 rounded-lg overflow-hidden">
-              {profiles.map(p => (
+          {/* Thema en instellingen samen in één pil */}
+          <div className="flex items-center gap-0.5 p-1 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/60 dark:border-zinc-700/60">
+            {THEME_OPTIONS.map(opt => {
+              const Icon = opt.icon;
+              const isActive = theme === opt.value;
+              return (
                 <button
-                  key={p.id}
-                  onClick={() => setActiveProfileId(p.id)}
-                  disabled={isSpinning}
-                  className={`px-2 sm:px-4 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all truncate max-w-[80px] sm:max-w-[120px] disabled:cursor-not-allowed ${
-                    activeProfileId === p.id 
-                      ? 'bg-white dark:bg-zinc-700 text-accent-600 dark:text-accent-300 shadow-sm' 
-                      : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100'
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setTheme(opt.value)}
+                  aria-label={opt.label}
+                  aria-pressed={isActive}
+                  title={opt.label}
+                  className={`p-1.5 rounded-full transition-colors ${
+                    isActive
+                      ? 'bg-white dark:bg-zinc-600 text-accent-600 dark:text-accent-300 shadow-sm'
+                      : 'text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300'
                   }`}
                 >
-                  {p.name}
+                  <Icon size={16} />
                 </button>
-              ))}
-            </div>
-            <button 
+              );
+            })}
+            <div className="w-px h-5 mx-1 bg-zinc-300 dark:bg-zinc-600" />
+            <button
               onClick={() => setShowSettings(!showSettings)}
               disabled={isSpinning}
-              className={`p-2 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${showSettings ? 'bg-accent-50 text-accent-600 dark:bg-accent-900/40 dark:text-accent-300' : 'text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+              aria-label="Instellingen"
+              aria-pressed={showSettings}
+              title="Instellingen"
+              className={`p-1.5 rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                showSettings
+                  ? 'bg-accent-600 text-white shadow-sm'
+                  : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100'
+              }`}
             >
-              <Settings size={20} />
+              <Settings size={16} />
             </button>
           </div>
         </div>
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-4 sm:py-8">
-        {/* Op de telefoon is de header vol, dus daar staat de schakelaar net eronder */}
-        <div className="flex justify-end mb-2 sm:hidden">
-          {themeToggle}
-        </div>
+        {/* Wie oefent en op welk instrument: samen boven het wiel */}
+        {!showSettings && (profiles.length > 1 || profileInstruments.length > 1) && (
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+            {profiles.length > 1 && (
+              <div className="flex bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-1 rounded-xl shadow-sm max-w-full overflow-x-auto">
+                {profiles.map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => setActiveProfileId(p.id)}
+                    disabled={isSpinning}
+                    className={`px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-all truncate max-w-[140px] disabled:cursor-not-allowed ${
+                      activeProfileId === p.id
+                        ? 'bg-accent-100 text-accent-700 dark:bg-accent-900/50 dark:text-accent-200'
+                        : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100'
+                    }`}
+                  >
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+            )}
 
-        {!showSettings && profileInstruments.length > 1 && (
-          <div className="flex items-center justify-center mb-4 sm:mb-6">
+            {profileInstruments.length > 1 && (
             <div className="flex bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-1 rounded-xl shadow-sm">
               {profileInstruments.map(i => (
                 <button
@@ -399,6 +402,7 @@ export default function App() {
                 </button>
               ))}
             </div>
+            )}
           </div>
         )}
 
