@@ -18,7 +18,7 @@ export const SongSelector: React.FC<SongSelectorProps> = ({
   onToggleSong,
   onToggleBook,
 }) => {
-  const [expandedBooks, setExpandedBooks] = React.useState<Set<string>>(new Set([books[0]?.id]));
+  const [expandedBooks, setExpandedBooks] = React.useState<Set<string>>(new Set());
 
   const toggleBookExpand = (bookId: string) => {
     const newExpanded = new Set(expandedBooks);
