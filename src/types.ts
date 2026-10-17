@@ -27,3 +27,8 @@ export interface Profile {
   instrumentIds: string[];
   selectedSongIds: string[];
 }
+
+export interface LastResult {
+  item: string;
+  at: number;
+}

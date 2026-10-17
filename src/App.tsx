@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Wheel } from './components/Wheel';
 import { SongSelector } from './components/SongSelector';
 import { INITIAL_BOOKS, INSTRUMENTS, INITIAL_SONGS } from './constants';
-import { Profile, Book, Song } from './types';
-import { Users, Settings, Music, Trophy, Plus, Trash2, Edit2, Save, X, BookOpen, Volume2, VolumeX, Mic, MicOff, Check } from 'lucide-react';
+import { Profile, Book, Song, LastResult } from './types';
+import { Users, Settings, Music, Trophy, Plus, Trash2, Edit2, Save, X, BookOpen, Volume2, VolumeX, Mic, MicOff, Check, ChevronDown } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -11,6 +11,7 @@ const PROFILES_KEY = 'guitar_practice_profiles_v6';
 const BOOKS_KEY = 'guitar_practice_books_v6';
 const SONGS_KEY = 'guitar_practice_songs_v6';
 const SOUND_KEY = 'guitar_practice_sound_v1';
+const LAST_RESULTS_KEY = 'guitar_practice_last_results_v1';
 const VOICE_KEY = 'guitar_practice_voice_v1';
 
 // Data van vóór de instrumenten-uitbreiding was altijd gitaar
@@ -56,6 +57,13 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [activeTab, setActiveTab] = useState<'profiles' | 'data' | 'settings'>('profiles');
 
+  // Laatst gedraaide liedje per kind en instrument
+  const [lastResults, setLastResults] = useState<Record<string, LastResult>>(() => {
+    const saved = localStorage.getItem(LAST_RESULTS_KEY);
+    return saved ? JSON.parse(saved) : {};
+  });
+  const [songListOpen, setSongListOpen] = useState(false);
+
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
     const saved = localStorage.getItem(SOUND_KEY);
     return saved ? JSON.parse(saved) : true;
@@ -74,6 +82,10 @@ export default function App() {
   const [selectedBookForNewSong, setSelectedBookForNewSong] = useState<string>('');
 
   // Persistence
+  useEffect(() => {
+    localStorage.setItem(LAST_RESULTS_KEY, JSON.stringify(lastResults));
+  }, [lastResults]);
+
   useEffect(() => {
     localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
   }, [profiles]);
@@ -161,7 +173,10 @@ export default function App() {
     }));
   };
 
+  const resultKey = `${activeProfileId}:${activeInstrument?.id}`;
+
   const handleWheelFinish = (item: string) => {
+    setLastResults(prev => ({ ...prev, [resultKey]: { item, at: Date.now() } }));
     confetti({
       particleCount: 200,
       spread: 90,
@@ -324,8 +339,10 @@ export default function App() {
           {!showSettings && (
           <div className="lg:col-span-7 flex flex-col items-center justify-center min-h-[350px] sm:min-h-[500px] lg:min-h-[600px]">
             {wheelItems.length > 0 ? (
-              <Wheel 
-                items={wheelItems} 
+              <Wheel
+                key={resultKey}
+                items={wheelItems}
+                lastResult={lastResults[resultKey]}
                 onFinish={handleWheelFinish}
                 isSpinning={isSpinning}
                 setIsSpinning={setIsSpinning}
@@ -679,7 +696,23 @@ export default function App() {
                   exit={{ opacity: 0, x: -20 }}
                   className="space-y-4"
                 >
-                  <div className="flex items-center justify-between">
+                  {/* Op de telefoon ingeklapt achter een knop; op groot scherm altijd open */}
+                  <button
+                    onClick={() => setSongListOpen(!songListOpen)}
+                    aria-expanded={songListOpen}
+                    className="lg:hidden w-full flex items-center justify-between gap-3 px-4 py-3 bg-white border border-zinc-200 rounded-2xl shadow-sm font-bold text-zinc-800"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Music size={20} className="text-accent-500" />
+                      Liedjes kiezen
+                    </span>
+                    <span className="flex items-center gap-2 text-xs font-medium text-zinc-400">
+                      {selectedInstrumentSongCount} / {instrumentSongs.length}
+                      <ChevronDown size={18} className={`text-zinc-500 transition-transform ${songListOpen ? 'rotate-180' : ''}`} />
+                    </span>
+                  </button>
+
+                  <div className="hidden lg:flex items-center justify-between">
                     <h2 className="text-lg font-bold flex items-center gap-2">
                       <Music size={20} className="text-accent-500" />
                       Liedjes selecteren
@@ -692,7 +725,7 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="pr-2">
+                  <div className={`pr-2 ${songListOpen ? '' : 'hidden'} lg:block`}>
                     <SongSelector
                       key={activeInstrument?.id}
                       books={instrumentBooks}

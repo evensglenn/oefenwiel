@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { LucideIcon } from 'lucide-react';
+import type { LastResult } from '../types';
 
 interface WheelProps {
   items: string[];
@@ -10,6 +11,7 @@ interface WheelProps {
   soundEnabled: boolean;
   voiceEnabled: boolean;
   instrumentIcon?: LucideIcon;
+  lastResult?: LastResult;
 }
 
 const COLORS = [
@@ -38,6 +40,14 @@ const textColorFor = (hex: string) => {
   return whiteContrast >= darkContrast ? '#fff' : DARK_TEXT;
 };
 
+const dayLabel = (timestamp: number) => {
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const days = Math.round((startOfDay(new Date()) - startOfDay(new Date(timestamp))) / 86400000);
+  if (days === 0) return 'vandaag';
+  if (days === 1) return 'gisteren';
+  return new Date(timestamp).toLocaleDateString('nl-BE', { weekday: 'long', day: 'numeric', month: 'long' });
+};
+
 const splitWinner = (text: string) => {
   if (!text.includes('(')) return { song: text, book: null };
   return {
@@ -54,6 +64,7 @@ export const Wheel: React.FC<WheelProps> = ({
   soundEnabled,
   voiceEnabled,
   instrumentIcon: InstrumentIcon,
+  lastResult,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -330,6 +341,17 @@ export const Wheel: React.FC<WheelProps> = ({
       >
         {isSpinning ? 'Draaien...' : 'Draai aan het wiel'}
       </button>
+
+      {lastResult && !result && !isSpinning && (() => {
+        const last = splitWinner(lastResult.item);
+        return (
+          <p className="mt-4 text-sm text-zinc-500 text-center">
+            Laatst gedraaid {dayLabel(lastResult.at)}:{' '}
+            <span className="font-bold text-zinc-800">{last.song}</span>
+            {last.book && <span className="text-accent-600"> · {last.book}</span>}
+          </p>
+        );
+      })()}
     </div>
   );
 };
