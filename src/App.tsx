@@ -676,16 +676,6 @@ export default function App() {
                             </button>
                           </div>
                         </div>
-
-                        <div className="mt-8 p-4 bg-zinc-50 rounded-xl border border-zinc-100">
-                          <p className="text-[10px] text-zinc-400 text-center uppercase tracking-widest font-bold">
-                            Systeem Info
-                          </p>
-                          <div className="flex justify-between mt-2 text-[10px] font-mono text-zinc-500">
-                            <span>Versie</span>
-                            <span>v1.5.0</span>
-                          </div>
-                        </div>
                       </div>
                     )}
                   </div>
