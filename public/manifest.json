@@ -1,7 +1,8 @@
 {
-  "name": "Oefenwiel Gitaar",
+  "name": "Oefenwiel",
+  "lang": "nl",
   "short_name": "Oefenwiel",
-  "description": "Interactief gitaar oefenwiel voor kinderen",
+  "description": "Interactief oefenwiel voor kinderen die gitaar of piano spelen",
   "start_url": "/oefenwiel/",
   "display": "standalone",
   "background_color": "#f9fafb",

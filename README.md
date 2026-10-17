@@ -1,6 +1,6 @@
 # Oefenwiel Gitaar
 
-Een interactief gitaar-oefenwiel voor kinderen met Suzuki-repertoire.
+Een interactief oefenwiel voor kinderen die gitaar of piano spelen, met Suzuki-repertoire.
 
 Er is geen API-key of backend nodig: de app draait volledig in de browser.
 
