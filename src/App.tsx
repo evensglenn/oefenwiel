@@ -75,6 +75,20 @@ export default function App() {
   });
   const [songListOpen, setSongListOpen] = useState(false);
 
+  // Titelbalk verdwijnt bij naar beneden scrollen en komt terug bij omhoog scrollen
+  const [headerHidden, setHeaderHidden] = useState(false);
+  useEffect(() => {
+    let lastY = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      if (Math.abs(y - lastY) < 8) return;
+      setHeaderHidden(y > lastY && y > 64);
+      lastY = y;
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
     const saved = localStorage.getItem(SOUND_KEY);
     return saved ? JSON.parse(saved) : true;
@@ -313,7 +327,7 @@ export default function App() {
   return (
     <div data-instrument={activeInstrument?.id} className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 font-sans transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 sticky top-0 z-30">
+      <header className={`bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 sticky top-0 z-30 transition-transform duration-300 ${headerHidden ? '-translate-y-full' : ''}`}>
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 bg-accent-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-accent-200 dark:shadow-none">
@@ -370,7 +384,7 @@ export default function App() {
       <main className="max-w-5xl mx-auto px-4 py-4 sm:py-8">
         {/* Wie oefent en op welk instrument: samen boven het wiel */}
         {!showSettings && (
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+          <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-3 mb-4 sm:mb-6">
             {profiles.length > 1 && (
               <div className="flex bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-1 rounded-xl shadow-sm max-w-full overflow-x-auto">
                 {profiles.map(p => (
@@ -378,7 +392,7 @@ export default function App() {
                     key={p.id}
                     onClick={() => setActiveProfileId(p.id)}
                     disabled={isSpinning}
-                    className={`relative px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-colors max-w-[140px] disabled:cursor-not-allowed ${
+                    className={`relative px-3 sm:px-5 py-2 rounded-lg text-sm font-bold transition-colors max-w-[120px] sm:max-w-[140px] disabled:cursor-not-allowed ${
                       activeProfileId === p.id
                         ? 'text-accent-700 dark:text-accent-200'
                         : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100'
@@ -403,7 +417,9 @@ export default function App() {
                     key={i.id}
                     onClick={() => setActiveInstrumentId(i.id)}
                     disabled={isSpinning || isOnly}
-                    className={`relative px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2 ${isOnly ? 'cursor-default' : 'disabled:cursor-not-allowed'} ${
+                    aria-label={i.name}
+                    title={i.name}
+                    className={`relative px-3 sm:px-5 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5 sm:gap-2 ${isOnly ? 'cursor-default' : 'disabled:cursor-not-allowed'} ${
                       isActive
                         ? 'text-white'
                         : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100'
@@ -421,7 +437,8 @@ export default function App() {
                     >
                       <i.icon size={16} />
                     </motion.span>
-                    <span className="relative">{i.name}</span>
+                    {/* Op smalle schermen enkel het icoon van het niet-gekozen instrument, zodat alles op één rij past */}
+                    <span className={`relative ${isActive ? '' : 'hidden sm:inline'}`}>{i.name}</span>
                   </button>
                 );
               })}
