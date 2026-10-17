@@ -291,8 +291,7 @@ export default function App() {
 
       <main className="max-w-5xl mx-auto px-4 py-4 sm:py-8">
         {!showSettings && profileInstruments.length > 1 && (
-          <div className="flex items-center justify-center gap-3 mb-4 sm:mb-6">
-            <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Instrument</span>
+          <div className="flex items-center justify-center mb-4 sm:mb-6">
             <div className="flex bg-white border border-zinc-200 p-1 rounded-xl shadow-sm">
               {profileInstruments.map(i => (
                 <button
