@@ -290,7 +290,8 @@ export default function App() {
                 <button
                   key={p.id}
                   onClick={() => setActiveProfileId(p.id)}
-                  className={`px-2 sm:px-4 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all truncate max-w-[80px] sm:max-w-[120px] ${
+                  disabled={isSpinning}
+                  className={`px-2 sm:px-4 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all truncate max-w-[80px] sm:max-w-[120px] disabled:cursor-not-allowed ${
                     activeProfileId === p.id 
                       ? 'bg-white text-accent-600 shadow-sm' 
                       : 'text-zinc-500 hover:text-zinc-800'
@@ -302,7 +303,8 @@ export default function App() {
             </div>
             <button 
               onClick={() => setShowSettings(!showSettings)}
-              className={`p-2 rounded-lg transition-colors ${showSettings ? 'bg-accent-50 text-accent-600' : 'text-zinc-400 hover:bg-zinc-100'}`}
+              disabled={isSpinning}
+              className={`p-2 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${showSettings ? 'bg-accent-50 text-accent-600' : 'text-zinc-400 hover:bg-zinc-100'}`}
             >
               <Settings size={20} />
             </button>

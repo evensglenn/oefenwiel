@@ -124,6 +124,25 @@ export const Wheel: React.FC<WheelProps> = ({
     return () => observer.disconnect();
   }, []);
 
+  // Lopende animatie en geplande aankondiging, zodat we ze kunnen stoppen
+  const frameRef = useRef<number | null>(null);
+  const announceTimeoutRef = useRef<number | null>(null);
+
+  const stopPending = () => {
+    if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+    if (announceTimeoutRef.current !== null) clearTimeout(announceTimeoutRef.current);
+    frameRef.current = null;
+    announceTimeoutRef.current = null;
+    window.speechSynthesis?.cancel();
+  };
+
+  // Verdwijnt het wiel (instellingen, ander kind of instrument), dan mag een
+  // halve draai niet op de achtergrond verder lopen en een liedje uitspreken
+  useEffect(() => () => {
+    if (frameRef.current !== null) setIsSpinning(false);
+    stopPending();
+  }, []);
+
   const spinRef = useRef({
     startRotation: 0,
     targetRotation: 0,
@@ -202,6 +221,8 @@ export const Wheel: React.FC<WheelProps> = ({
 
   const announceWinner = (text: string) => {
     if (!window.speechSynthesis || !voiceEnabled) return;
+    // Niet voorlezen als de app niet in beeld is; anders klinkt het later "uit het niets"
+    if (document.visibilityState !== 'visible') return;
 
     // Format: "Song Title uit Book Title"
     const { song, book } = splitWinner(text);
@@ -211,12 +232,15 @@ export const Wheel: React.FC<WheelProps> = ({
     utterance.lang = 'nl-NL'; // Dutch
     utterance.rate = 0.9;
     utterance.pitch = 1.1;
+    // Oude, nog wachtende aankondigingen eerst wissen
+    window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utterance);
   };
 
   const spin = () => {
     if (isSpinning || items.length === 0) return;
 
+    stopPending();
     setIsSpinning(true);
     setWinner(null);
     
@@ -241,8 +265,9 @@ export const Wheel: React.FC<WheelProps> = ({
       setRotation(currentRotation);
 
       if (progress < 1) {
-        requestAnimationFrame(animate);
+        frameRef.current = requestAnimationFrame(animate);
       } else {
+        frameRef.current = null;
         setIsSpinning(false);
         // Welk vak staat onder de wijzer bovenaan?
         const fullTurn = 2 * Math.PI;
@@ -258,7 +283,8 @@ export const Wheel: React.FC<WheelProps> = ({
         }
 
         // Announce winner with a slight delay so it doesn't overlap with the success sound
-        setTimeout(() => {
+        announceTimeoutRef.current = window.setTimeout(() => {
+          announceTimeoutRef.current = null;
           announceWinner(result);
         }, 1700);
 
@@ -267,7 +293,7 @@ export const Wheel: React.FC<WheelProps> = ({
       }
     };
 
-    requestAnimationFrame(animate);
+    frameRef.current = requestAnimationFrame(animate);
   };
 
   const result = winner && !isSpinning ? splitWinner(winner) : null;
