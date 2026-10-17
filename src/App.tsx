@@ -157,9 +157,10 @@ export default function App() {
 
   const handleWheelFinish = (item: string) => {
     confetti({
-      particleCount: 150,
-      spread: 70,
-      origin: { y: 0.6 },
+      particleCount: 200,
+      spread: 90,
+      startVelocity: 45,
+      origin: { y: 0.45 },
       colors: ['#6366f1', '#a855f7', '#ec4899']
     });
   };
@@ -289,7 +290,7 @@ export default function App() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-4 sm:py-8">
-        {profileInstruments.length > 1 && (
+        {!showSettings && profileInstruments.length > 1 && (
           <div className="flex items-center justify-center gap-3 mb-4 sm:mb-6">
             <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Instrument</span>
             <div className="flex bg-white border border-zinc-200 p-1 rounded-xl shadow-sm">
@@ -314,7 +315,8 @@ export default function App() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           
-          {/* Left Column: Wheel */}
+          {/* Left Column: Wheel (verborgen tijdens de instellingen) */}
+          {!showSettings && (
           <div className="lg:col-span-7 flex flex-col items-center justify-center min-h-[350px] sm:min-h-[500px] lg:min-h-[600px]">
             {wheelItems.length > 0 ? (
               <Wheel 
@@ -324,6 +326,7 @@ export default function App() {
                 setIsSpinning={setIsSpinning}
                 soundEnabled={soundEnabled}
                 voiceEnabled={voiceEnabled}
+                instrumentIcon={activeInstrument?.icon}
               />
             ) : (
               <div className="text-center p-12 bg-white rounded-3xl border-2 border-dashed border-zinc-200 max-w-md">
@@ -339,9 +342,10 @@ export default function App() {
               </div>
             )}
           </div>
+          )}
 
           {/* Right Column: Selection & Settings */}
-          <div className="lg:col-span-5 space-y-6">
+          <div className={showSettings ? 'lg:col-span-12 w-full max-w-2xl mx-auto space-y-6' : 'lg:col-span-5 space-y-6'}>
             <AnimatePresence mode="wait">
               {showSettings ? (
                 <motion.div
@@ -675,7 +679,7 @@ export default function App() {
                       <Music size={20} className="text-indigo-500" />
                       Liedjes selecteren
                       {activeInstrument && (
-                        <span className="text-sm font-medium text-zinc-400 flex items-center gap-1">· <activeInstrument.icon size={14} /> {activeInstrument.name}</span>
+                        <span className="hidden sm:flex text-sm font-medium text-zinc-400 items-center gap-1">· <activeInstrument.icon size={14} /> {activeInstrument.name}</span>
                       )}
                     </h2>
                     <div className="text-xs font-medium text-zinc-400">
@@ -715,26 +719,9 @@ export default function App() {
             </p>
           </div>
 
-          <div className="flex flex-col items-start md:items-end gap-2">
-            <div className="flex items-center gap-1.5 text-sm font-medium text-zinc-600">
-              <span>Gemaakt met</span>
-              <motion.div
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                <Trophy size={14} className="text-indigo-500" />
-              </motion.div>
-              <span>door Glenn Evens</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-bold rounded-full uppercase tracking-wider">
-                Powered by AI
-              </span>
-              <span className="text-[10px] text-zinc-400 font-mono">
-                v1.5.0
-              </span>
-            </div>
-          </div>
+          <span className="text-xs text-zinc-400 font-mono">
+            v{__APP_VERSION__}
+          </span>
         </div>
       </footer>
 

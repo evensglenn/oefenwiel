@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import type { LucideIcon } from 'lucide-react';
 
 interface WheelProps {
   items: string[];
@@ -8,6 +9,7 @@ interface WheelProps {
   setIsSpinning: (spinning: boolean) => void;
   soundEnabled: boolean;
   voiceEnabled: boolean;
+  instrumentIcon?: LucideIcon;
 }
 
 const COLORS = [
@@ -15,13 +17,43 @@ const COLORS = [
   '#F7DC6F', '#BB8FCE', '#82E0AA', '#F1948A', '#85C1E9'
 ];
 
+const DARK_TEXT = '#27272a';
+const WHEEL_FONT = 'Nunito, ui-sans-serif, system-ui, sans-serif';
+// Wijzer staat bovenaan; in canvas-hoeken is dat -90°
+const POINTER_ANGLE = -Math.PI / 2;
+
+const luminance = (hex: string) => {
+  const [r, g, b] = [1, 3, 5].map(i => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+
+// Kies per vak de tekstkleur (wit of donker) met het meeste contrast
+const textColorFor = (hex: string) => {
+  const l = luminance(hex);
+  const whiteContrast = 1.05 / (l + 0.05);
+  const darkContrast = (l + 0.05) / (luminance(DARK_TEXT) + 0.05);
+  return whiteContrast >= darkContrast ? '#fff' : DARK_TEXT;
+};
+
+const splitWinner = (text: string) => {
+  if (!text.includes('(')) return { song: text, book: null };
+  return {
+    song: text.substring(0, text.lastIndexOf('(')).trim(),
+    book: text.substring(text.lastIndexOf('(') + 1, text.lastIndexOf(')')),
+  };
+};
+
 export const Wheel: React.FC<WheelProps> = ({ 
   items, 
   onFinish, 
   isSpinning, 
   setIsSpinning,
   soundEnabled,
-  voiceEnabled
+  voiceEnabled,
+  instrumentIcon: InstrumentIcon,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -29,6 +61,12 @@ export const Wheel: React.FC<WheelProps> = ({
   const [rotation, setRotation] = useState(0);
   const [winner, setWinner] = useState<string | null>(null);
   const [size, setSize] = useState(400);
+  const [fontsReady, setFontsReady] = useState(false);
+
+  // Canvas tekent pas met het juiste lettertype als het geladen is
+  useEffect(() => {
+    document.fonts?.load(`800 16px ${WHEEL_FONT}`).finally(() => setFontsReady(true));
+  }, []);
 
   // Initialize audio
   useEffect(() => {
@@ -88,10 +126,15 @@ export const Wheel: React.FC<WheelProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const canvasSize = canvas.width;
+    // Teken op de pixeldichtheid van het scherm, zodat het wiel scherp blijft op retina
+    const dpr = window.devicePixelRatio || 1;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const canvasSize = size;
     const center = canvasSize / 2;
     const radius = canvasSize / 2 - 10;
     const sliceAngle = (2 * Math.PI) / items.length;
+    const pinRadius = canvasSize / 25;
 
     ctx.clearRect(0, 0, canvasSize, canvasSize);
 
@@ -103,7 +146,8 @@ export const Wheel: React.FC<WheelProps> = ({
       ctx.moveTo(center, center);
       ctx.arc(center, center, radius, angle, angle + sliceAngle);
       ctx.closePath();
-      ctx.fillStyle = COLORS[i % COLORS.length];
+      const color = COLORS[i % COLORS.length];
+      ctx.fillStyle = color;
       ctx.fill();
       ctx.strokeStyle = '#fff';
       ctx.lineWidth = 2;
@@ -114,20 +158,26 @@ export const Wheel: React.FC<WheelProps> = ({
       ctx.translate(center, center);
       ctx.rotate(angle + sliceAngle / 2);
       ctx.textAlign = 'right';
-      ctx.fillStyle = '#fff';
-      // Scale font size slightly with wheel size
-      const fontSize = Math.max(9, Math.floor(canvasSize / 32));
-      ctx.font = `bold ${fontSize}px Inter`;
-      // Show more characters for longer strings
-      const maxChars = Math.floor(canvasSize / 15);
-      const displayItem = item.length > maxChars ? item.substring(0, maxChars - 3) + '...' : item;
+      ctx.fillStyle = textColorFor(color);
+      // Schaal met het wiel, maar nooit hoger dan het vak breed is
+      const fontSize = Math.max(9, Math.floor(Math.min(canvasSize / 28, sliceAngle * radius * 0.5)));
+      ctx.font = `800 ${fontSize}px ${WHEEL_FONT}`;
+      // Kort de tekst in tot hij tussen de rand en de middenpin past
+      const maxWidth = radius - 15 - pinRadius - 8;
+      // Het boek staat op de resultaatkaart; op het wiel enkel de titel
+      const label = splitWinner(item).song;
+      let displayItem = label;
+      while (displayItem.length > 1 && ctx.measureText(displayItem).width > maxWidth) {
+        displayItem = displayItem.slice(0, -1);
+      }
+      if (displayItem !== label) displayItem = displayItem.trimEnd() + '…';
       ctx.fillText(displayItem, radius - 15, fontSize / 3);
       ctx.restore();
     });
 
     // Draw center pin
     ctx.beginPath();
-    ctx.arc(center, center, canvasSize / 25, 0, 2 * Math.PI);
+    ctx.arc(center, center, pinRadius, 0, 2 * Math.PI);
     ctx.fillStyle = '#333';
     ctx.fill();
     ctx.strokeStyle = '#fff';
@@ -137,18 +187,14 @@ export const Wheel: React.FC<WheelProps> = ({
 
   useEffect(() => {
     drawWheel(rotation);
-  }, [items, rotation, size]);
+  }, [items, rotation, size, fontsReady]);
 
   const announceWinner = (text: string) => {
     if (!window.speechSynthesis || !voiceEnabled) return;
 
     // Format: "Song Title uit Book Title"
-    let announcement = text;
-    if (text.includes('(')) {
-      const song = text.substring(0, text.lastIndexOf('(')).trim();
-      const book = text.substring(text.lastIndexOf('(') + 1, text.lastIndexOf(')'));
-      announcement = `${song} uit ${book}`;
-    }
+    const { song, book } = splitWinner(text);
+    const announcement = book ? `${song} uit ${book}` : song;
 
     const utterance = new SpeechSynthesisUtterance(announcement);
     utterance.lang = 'nl-NL'; // Dutch
@@ -187,9 +233,11 @@ export const Wheel: React.FC<WheelProps> = ({
         requestAnimationFrame(animate);
       } else {
         setIsSpinning(false);
-        const finalRotation = currentRotation % (2 * Math.PI);
-        const sliceAngle = (2 * Math.PI) / items.length;
-        const winningIndex = Math.floor((2 * Math.PI - finalRotation) / sliceAngle) % items.length;
+        // Welk vak staat onder de wijzer bovenaan?
+        const fullTurn = 2 * Math.PI;
+        const sliceAngle = fullTurn / items.length;
+        const offset = (((POINTER_ANGLE - currentRotation) % fullTurn) + fullTurn) % fullTurn;
+        const winningIndex = Math.floor(offset / sliceAngle) % items.length;
         const result = items[winningIndex];
         
         // Play success sound
@@ -211,67 +259,77 @@ export const Wheel: React.FC<WheelProps> = ({
     requestAnimationFrame(animate);
   };
 
+  const result = winner && !isSpinning ? splitWinner(winner) : null;
+
   return (
     <div ref={containerRef} className="flex flex-col items-center w-full max-w-[450px]">
       <div className="relative">
-        {/* Pointer */}
-        <div className="absolute top-1/2 -right-2 -translate-y-1/2 z-20">
-          <div 
-            className="w-8 h-8 sm:w-10 sm:h-10 bg-zinc-800 shadow-lg" 
-            style={{ 
-              clipPath: 'polygon(100% 0%, 0% 50%, 100% 100%)',
-              filter: 'drop-shadow(-2px 0px 2px rgba(0,0,0,0.2))'
-            }}
+        {/* Wijzer bovenaan */}
+        <div className="absolute left-1/2 -top-3 sm:-top-4 -translate-x-1/2 z-20 drop-shadow-md">
+          <div
+            className="w-8 h-10 sm:w-10 sm:h-12 bg-zinc-800"
+            style={{ clipPath: 'polygon(0% 0%, 100% 0%, 50% 100%)' }}
           ></div>
         </div>
 
         <div className="bg-white p-2 sm:p-4 rounded-full shadow-2xl border-4 sm:border-8 border-zinc-800">
-          <canvas 
-            ref={canvasRef} 
-            width={size} 
-            height={size} 
-            className="rounded-full"
+          <canvas
+            ref={canvasRef}
+            width={Math.round(size * (window.devicePixelRatio || 1))}
+            height={Math.round(size * (window.devicePixelRatio || 1))}
+            style={{ width: size, height: size }}
+            className="rounded-full block"
           />
         </div>
+
+        {/* Resultaatkaart over het wiel */}
+        <AnimatePresence>
+          {result && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-30 flex items-center justify-center"
+            >
+              <motion.div
+                initial={{ scale: 0.6, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 260, damping: 18 }}
+                className="w-[85%] bg-white rounded-3xl shadow-2xl border-4 border-indigo-500 p-5 sm:p-7 text-center"
+              >
+                {InstrumentIcon && (
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 mx-auto -mt-11 sm:-mt-14 mb-2 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg">
+                    <InstrumentIcon size={28} />
+                  </div>
+                )}
+                <h3 className="text-xs sm:text-sm uppercase tracking-widest text-zinc-500 font-bold">Vandaag oefenen we</h3>
+                <p className="mt-2 text-2xl sm:text-3xl font-black text-zinc-900 leading-tight break-words">{result.song}</p>
+                {result.book && (
+                  <p className="mt-1 text-base sm:text-lg font-bold text-indigo-600">{result.book}</p>
+                )}
+                <button
+                  onClick={() => setWinner(null)}
+                  className="mt-5 px-6 py-2.5 rounded-full bg-indigo-600 text-white font-bold hover:bg-indigo-700 active:scale-95 transition-all"
+                >
+                  Oké, aan de slag!
+                </button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <button
         onClick={spin}
         disabled={isSpinning || items.length === 0}
-        className={`mt-8 px-8 py-4 rounded-full font-bold text-xl transition-all transform hover:scale-105 active:scale-95 shadow-lg
-          ${isSpinning || items.length === 0 
-            ? 'bg-zinc-400 cursor-not-allowed' 
+        className={`mt-8 px-8 py-4 rounded-full font-black text-xl transition-all transform hover:scale-105 active:scale-95 shadow-lg
+          ${isSpinning || items.length === 0
+            ? 'bg-zinc-400 text-white cursor-not-allowed'
             : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
       >
         {isSpinning ? 'Draaien...' : 'Draai aan het wiel'}
       </button>
-
-      <AnimatePresence>
-        {winner && !isSpinning && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="mt-6 text-center"
-          >
-            <h3 className="text-sm uppercase tracking-widest text-zinc-500 font-semibold">Vandaag oefenen we:</h3>
-            <div className="mt-1">
-              {winner.includes('(') ? (
-                <>
-                  <p className="text-3xl font-black text-zinc-900">
-                    {winner.substring(0, winner.lastIndexOf('(')).trim()}
-                  </p>
-                  <p className="text-lg font-medium text-indigo-600">
-                    {winner.substring(winner.lastIndexOf('(') + 1, winner.lastIndexOf(')'))}
-                  </p>
-                </>
-              ) : (
-                <p className="text-3xl font-black text-zinc-900">{winner}</p>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
