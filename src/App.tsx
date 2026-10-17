@@ -22,6 +22,9 @@ const THEME_OPTIONS: { value: ThemePreference; label: string; icon: typeof Sun }
   { value: 'dark', label: 'Donker', icon: Moon },
 ];
 
+// Veer voor de glijdende keuzebolletjes (kind, instrument, thema)
+const PILL_SPRING = { type: 'spring', stiffness: 500, damping: 35 } as const;
+
 // Data van vóór de instrumenten-uitbreiding was altijd gitaar
 const LEGACY_INSTRUMENT_ID = 'gitaar';
 
@@ -332,13 +335,16 @@ export default function App() {
                   aria-label={opt.label}
                   aria-pressed={isActive}
                   title={opt.label}
-                  className={`p-1.5 rounded-full transition-colors ${
+                  className={`relative p-1.5 rounded-full transition-colors ${
                     isActive
-                      ? 'bg-white dark:bg-zinc-600 text-accent-600 dark:text-accent-300 shadow-sm'
+                      ? 'text-accent-600 dark:text-accent-300'
                       : 'text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300'
                   }`}
                 >
-                  <Icon size={16} />
+                  {isActive && (
+                    <motion.span layoutId="theme-pill" transition={PILL_SPRING} className="absolute inset-0 rounded-full bg-white dark:bg-zinc-600 shadow-sm" />
+                  )}
+                  <Icon size={16} className="relative" />
                 </button>
               );
             })}
@@ -363,7 +369,7 @@ export default function App() {
 
       <main className="max-w-5xl mx-auto px-4 py-4 sm:py-8">
         {/* Wie oefent en op welk instrument: samen boven het wiel */}
-        {!showSettings && (profiles.length > 1 || profileInstruments.length > 1) && (
+        {!showSettings && (
           <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-6">
             {profiles.length > 1 && (
               <div className="flex bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-1 rounded-xl shadow-sm max-w-full overflow-x-auto">
@@ -372,37 +378,54 @@ export default function App() {
                     key={p.id}
                     onClick={() => setActiveProfileId(p.id)}
                     disabled={isSpinning}
-                    className={`px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-all truncate max-w-[140px] disabled:cursor-not-allowed ${
+                    className={`relative px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-colors max-w-[140px] disabled:cursor-not-allowed ${
                       activeProfileId === p.id
-                        ? 'bg-accent-100 text-accent-700 dark:bg-accent-900/50 dark:text-accent-200'
+                        ? 'text-accent-700 dark:text-accent-200'
                         : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100'
                     }`}
                   >
-                    {p.name}
+                    {activeProfileId === p.id && (
+                      <motion.span layoutId="profile-pill" transition={PILL_SPRING} className="absolute inset-0 rounded-lg bg-accent-100 dark:bg-accent-900/50 transition-colors" />
+                    )}
+                    <span className="relative block truncate">{p.name}</span>
                   </button>
                 ))}
               </div>
             )}
 
-            {profileInstruments.length > 1 && (
+            {/* Ook bij één instrument tonen, als vrolijk label in de instrumentkleur */}
             <div className="flex bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-1 rounded-xl shadow-sm">
-              {profileInstruments.map(i => (
-                <button
-                  key={i.id}
-                  onClick={() => setActiveInstrumentId(i.id)}
-                  disabled={isSpinning}
-                  className={`px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 disabled:cursor-not-allowed ${
-                    activeInstrument?.id === i.id
-                      ? 'bg-accent-600 text-white shadow-sm'
-                      : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100'
-                  }`}
-                >
-                  <i.icon size={16} />
-                  {i.name}
-                </button>
-              ))}
+              {profileInstruments.map(i => {
+                const isActive = activeInstrument?.id === i.id;
+                const isOnly = profileInstruments.length === 1;
+                return (
+                  <button
+                    key={i.id}
+                    onClick={() => setActiveInstrumentId(i.id)}
+                    disabled={isSpinning || isOnly}
+                    className={`relative px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2 ${isOnly ? 'cursor-default' : 'disabled:cursor-not-allowed'} ${
+                      isActive
+                        ? 'text-white'
+                        : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100'
+                    }`}
+                  >
+                    {isActive && (
+                      <motion.span layoutId="instrument-pill" transition={PILL_SPRING} className="absolute inset-0 rounded-lg bg-accent-600 shadow-sm transition-colors" />
+                    )}
+                    <motion.span
+                      key={`${activeProfileId}-${i.id}`}
+                      initial={{ scale: 0.6, rotate: -15, opacity: 0 }}
+                      animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                      className="relative"
+                    >
+                      <i.icon size={16} />
+                    </motion.span>
+                    <span className="relative">{i.name}</span>
+                  </button>
+                );
+              })}
             </div>
-            )}
           </div>
         )}
 
@@ -411,9 +434,17 @@ export default function App() {
           {/* Left Column: Wheel (verborgen tijdens de instellingen) */}
           {!showSettings && (
           <div className="lg:col-span-7 flex flex-col items-center justify-center min-h-[350px] sm:min-h-[500px] lg:min-h-[600px]">
+            <AnimatePresence mode="wait">
             {wheelItems.length > 0 ? (
-              <Wheel
+              <motion.div
                 key={resultKey}
+                initial={{ opacity: 0, scale: 0.85, rotate: -30 }}
+                animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                exit={{ opacity: 0, scale: 0.85, rotate: 30 }}
+                transition={{ duration: 0.3, ease: 'easeOut' }}
+                className="w-full flex justify-center"
+              >
+              <Wheel
                 items={wheelItems}
                 lastResult={lastResults[resultKey]}
                 onFinish={handleWheelFinish}
@@ -423,8 +454,14 @@ export default function App() {
                 voiceEnabled={voiceEnabled}
                 instrumentIcon={activeInstrument?.icon}
               />
+              </motion.div>
             ) : (
-              <div className="text-center p-12 bg-white dark:bg-zinc-900 rounded-3xl border-2 border-dashed border-zinc-200 dark:border-zinc-700 max-w-md">
+              <motion.div
+                key={`leeg-${resultKey}`}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="text-center p-12 bg-white dark:bg-zinc-900 rounded-3xl border-2 border-dashed border-zinc-200 dark:border-zinc-700 max-w-md">
                 <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4 text-zinc-400">
                   <Music size={32} />
                 </div>
@@ -434,8 +471,9 @@ export default function App() {
                     ? `Selecteer liedjes uit de lijst aan de rechterkant om het ${activeInstrument?.name.toLowerCase()}wiel voor ${activeProfile.name} te vullen.`
                     : `Er zijn nog geen liedjes voor ${activeInstrument?.name.toLowerCase()}. Voeg ze toe via Instellingen → Liedjes & Boeken.`}
                 </p>
-              </div>
+              </motion.div>
             )}
+            </AnimatePresence>
           </div>
           )}
 
