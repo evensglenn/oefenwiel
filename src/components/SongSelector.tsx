@@ -63,7 +63,7 @@ export const SongSelector: React.FC<SongSelectorProps> = ({
                 className="flex-1 flex items-center"
                 onClick={() => toggleBookExpand(book.id)}
               >
-                <BookIcon size={18} className="text-indigo-500 mr-3" />
+                <BookIcon size={18} className="text-accent-500 mr-3" />
                 <span className="font-semibold text-zinc-800">{book.title}</span>
                 <span className="ml-2 text-xs text-zinc-400">({bookSongs.length} liedjes)</span>
               </div>
@@ -74,12 +74,12 @@ export const SongSelector: React.FC<SongSelectorProps> = ({
                   onToggleBook(book.id, !isFull);
                 }}
                 className={`w-6 h-6 rounded flex items-center justify-center border-2 transition-all
-                  ${isFull ? 'bg-indigo-600 border-indigo-600 text-white' : 
-                    isPartial ? 'bg-indigo-100 border-indigo-600 text-indigo-600' : 
+                  ${isFull ? 'bg-accent-600 border-accent-600 text-white' : 
+                    isPartial ? 'bg-accent-100 border-accent-600 text-accent-600' : 
                     'border-zinc-300 bg-white'}`}
               >
                 {isFull && <Check size={14} strokeWidth={3} />}
-                {isPartial && <div className="w-2 h-0.5 bg-indigo-600 rounded-full" />}
+                {isPartial && <div className="w-2 h-0.5 bg-accent-600 rounded-full" />}
               </button>
             </div>
 
@@ -100,12 +100,12 @@ export const SongSelector: React.FC<SongSelectorProps> = ({
                           onClick={() => onToggleSong(song.id)}
                           className="flex items-center p-2 rounded-lg hover:bg-white hover:shadow-sm transition-all cursor-pointer group"
                         >
-                          <Music size={14} className={`mr-3 ${isSelected ? 'text-indigo-500' : 'text-zinc-400'}`} />
+                          <Music size={14} className={`mr-3 ${isSelected ? 'text-accent-500' : 'text-zinc-400'}`} />
                           <span className={`flex-1 text-sm ${isSelected ? 'text-zinc-900 font-medium' : 'text-zinc-500'}`}>
                             {song.title}
                           </span>
                           <div className={`w-5 h-5 rounded border transition-all flex items-center justify-center
-                            ${isSelected ? 'bg-indigo-500 border-indigo-500 text-white' : 'border-zinc-300 group-hover:border-zinc-400'}`}>
+                            ${isSelected ? 'bg-accent-500 border-accent-500 text-white' : 'border-zinc-300 group-hover:border-zinc-400'}`}>
                             {isSelected && <Check size={12} strokeWidth={3} />}
                           </div>
                         </div>

@@ -296,21 +296,21 @@ export const Wheel: React.FC<WheelProps> = ({
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.8, opacity: 0 }}
                 transition={{ type: 'spring', stiffness: 260, damping: 18 }}
-                className="w-[85%] bg-white rounded-3xl shadow-2xl border-4 border-indigo-500 p-5 sm:p-7 text-center"
+                className="w-[85%] bg-white rounded-3xl shadow-2xl border-4 border-accent-500 p-5 sm:p-7 text-center"
               >
                 {InstrumentIcon && (
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 mx-auto -mt-11 sm:-mt-14 mb-2 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 mx-auto -mt-11 sm:-mt-14 mb-2 bg-accent-600 text-white rounded-2xl flex items-center justify-center shadow-lg">
                     <InstrumentIcon size={28} />
                   </div>
                 )}
                 <h3 className="text-xs sm:text-sm uppercase tracking-widest text-zinc-500 font-bold">Vandaag oefenen we</h3>
                 <p className="mt-2 text-2xl sm:text-3xl font-black text-zinc-900 leading-tight break-words">{result.song}</p>
                 {result.book && (
-                  <p className="mt-1 text-base sm:text-lg font-bold text-indigo-600">{result.book}</p>
+                  <p className="mt-1 text-base sm:text-lg font-bold text-accent-600">{result.book}</p>
                 )}
                 <button
                   onClick={() => setWinner(null)}
-                  className="mt-5 px-6 py-2.5 rounded-full bg-indigo-600 text-white font-bold hover:bg-indigo-700 active:scale-95 transition-all"
+                  className="mt-5 px-6 py-2.5 rounded-full bg-accent-600 text-white font-bold hover:bg-accent-700 active:scale-95 transition-all"
                 >
                   Oké, aan de slag!
                 </button>
@@ -326,7 +326,7 @@ export const Wheel: React.FC<WheelProps> = ({
         className={`mt-8 px-8 py-4 rounded-full font-black text-xl transition-all transform hover:scale-105 active:scale-95 shadow-lg
           ${isSpinning || items.length === 0
             ? 'bg-zinc-400 text-white cursor-not-allowed'
-            : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+            : 'bg-accent-600 text-white hover:bg-accent-700'}`}
       >
         {isSpinning ? 'Draaien...' : 'Draai aan het wiel'}
       </button>

@@ -4,6 +4,9 @@ export interface Instrument {
   id: string;
   name: string;
   icon: LucideIcon;
+  // Hoofdkleur (statusbalk) en confettikleuren van het thema
+  themeColor: string;
+  confettiColors: string[];
 }
 
 export interface Song {

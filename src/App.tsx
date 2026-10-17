@@ -105,6 +105,12 @@ export default function App() {
   // Valt terug op het eerste instrument als het kind het gekozen instrument niet speelt
   const activeInstrument = profileInstruments.find(i => i.id === activeInstrumentId) || profileInstruments[0];
 
+  // Statusbalk op telefoon kleurt mee met het instrument
+  useEffect(() => {
+    if (!activeInstrument) return;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', activeInstrument.themeColor);
+  }, [activeInstrument]);
+
   const instrumentBooks = useMemo(() =>
     books.filter(b => b.instrumentId === activeInstrument?.id),
   [books, activeInstrument]);
@@ -161,7 +167,7 @@ export default function App() {
       spread: 90,
       startVelocity: 45,
       origin: { y: 0.45 },
-      colors: ['#6366f1', '#a855f7', '#ec4899']
+      colors: activeInstrument?.confettiColors ?? ['#6366f1', '#a855f7', '#ec4899']
     });
   };
 
@@ -252,12 +258,12 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans">
+    <div data-instrument={activeInstrument?.id} className="min-h-screen bg-zinc-50 text-zinc-900 font-sans">
       {/* Header */}
       <header className="bg-white border-b border-zinc-200 sticky top-0 z-30">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+            <div className="w-10 h-10 bg-accent-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-accent-200">
               <Music size={24} />
             </div>
             <h1 className="text-xl font-bold tracking-tight">Oefenwiel</h1>
@@ -271,7 +277,7 @@ export default function App() {
                   onClick={() => setActiveProfileId(p.id)}
                   className={`px-2 sm:px-4 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all truncate max-w-[80px] sm:max-w-[120px] ${
                     activeProfileId === p.id 
-                      ? 'bg-white text-indigo-600 shadow-sm' 
+                      ? 'bg-white text-accent-600 shadow-sm' 
                       : 'text-zinc-500 hover:text-zinc-800'
                   }`}
                 >
@@ -281,7 +287,7 @@ export default function App() {
             </div>
             <button 
               onClick={() => setShowSettings(!showSettings)}
-              className={`p-2 rounded-lg transition-colors ${showSettings ? 'bg-indigo-50 text-indigo-600' : 'text-zinc-400 hover:bg-zinc-100'}`}
+              className={`p-2 rounded-lg transition-colors ${showSettings ? 'bg-accent-50 text-accent-600' : 'text-zinc-400 hover:bg-zinc-100'}`}
             >
               <Settings size={20} />
             </button>
@@ -300,7 +306,7 @@ export default function App() {
                   disabled={isSpinning}
                   className={`px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 disabled:cursor-not-allowed ${
                     activeInstrument?.id === i.id
-                      ? 'bg-indigo-600 text-white shadow-sm'
+                      ? 'bg-accent-600 text-white shadow-sm'
                       : 'text-zinc-500 hover:text-zinc-800'
                   }`}
                 >
@@ -357,19 +363,19 @@ export default function App() {
                   <div className="flex border-b border-zinc-100">
                     <button 
                       onClick={() => setActiveTab('profiles')}
-                      className={`flex-1 py-4 text-sm font-bold transition-colors ${activeTab === 'profiles' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-zinc-400 hover:text-zinc-600'}`}
+                      className={`flex-1 py-4 text-sm font-bold transition-colors ${activeTab === 'profiles' ? 'text-accent-600 border-b-2 border-accent-600' : 'text-zinc-400 hover:text-zinc-600'}`}
                     >
                       Profielen
                     </button>
                     <button 
                       onClick={() => setActiveTab('data')}
-                      className={`flex-1 py-4 text-sm font-bold transition-colors ${activeTab === 'data' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-zinc-400 hover:text-zinc-600'}`}
+                      className={`flex-1 py-4 text-sm font-bold transition-colors ${activeTab === 'data' ? 'text-accent-600 border-b-2 border-accent-600' : 'text-zinc-400 hover:text-zinc-600'}`}
                     >
                       Liedjes & Boeken
                     </button>
                     <button 
                       onClick={() => setActiveTab('settings')}
-                      className={`flex-1 py-4 text-sm font-bold transition-colors ${activeTab === 'settings' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-zinc-400 hover:text-zinc-600'}`}
+                      className={`flex-1 py-4 text-sm font-bold transition-colors ${activeTab === 'settings' ? 'text-accent-600 border-b-2 border-accent-600' : 'text-zinc-400 hover:text-zinc-600'}`}
                     >
                       Instellingen
                     </button>
@@ -380,12 +386,12 @@ export default function App() {
                       <div className="space-y-6">
                         <div className="flex items-center justify-between">
                           <h2 className="text-lg font-bold flex items-center gap-2">
-                            <Users size={20} className="text-indigo-500" />
+                            <Users size={20} className="text-accent-500" />
                             Profielen
                           </h2>
                           <button 
                             onClick={() => setShowSettings(false)}
-                            className="text-sm text-indigo-600 font-medium hover:underline"
+                            className="text-sm text-accent-600 font-medium hover:underline"
                           >
                             Klaar
                           </button>
@@ -412,7 +418,7 @@ export default function App() {
                                 type="text"
                                 value={p.name}
                                 onChange={(e) => updateProfileName(p.id, e.target.value)}
-                                className="w-full px-4 py-2 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                                className="w-full px-4 py-2 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-500 transition-all"
                                 placeholder="Naam invoeren..."
                               />
                               <div className="flex flex-wrap gap-2">
@@ -427,8 +433,8 @@ export default function App() {
                                       title={isLast ? 'Elk kind speelt minstens één instrument' : undefined}
                                       className={`px-3 py-1 rounded-full text-xs font-bold border transition-all flex items-center gap-1 disabled:cursor-not-allowed ${
                                         plays
-                                          ? 'bg-indigo-600 border-indigo-600 text-white'
-                                          : 'bg-white border-zinc-200 text-zinc-400 hover:border-indigo-300 hover:text-indigo-500'
+                                          ? 'bg-accent-600 border-accent-600 text-white'
+                                          : 'bg-white border-zinc-200 text-zinc-400 hover:border-accent-300 hover:text-accent-500'
                                       }`}
                                     >
                                       {plays ? <Check size={12} strokeWidth={3} /> : <i.icon size={12} />}
@@ -442,19 +448,19 @@ export default function App() {
                           
                           <button 
                             onClick={addProfile}
-                            className="w-full py-3 border-2 border-dashed border-zinc-200 rounded-xl text-zinc-400 font-bold text-sm hover:border-indigo-300 hover:text-indigo-500 transition-all flex items-center justify-center gap-2"
+                            className="w-full py-3 border-2 border-dashed border-zinc-200 rounded-xl text-zinc-400 font-bold text-sm hover:border-accent-300 hover:text-accent-500 transition-all flex items-center justify-center gap-2"
                           >
                             <Plus size={18} />
                             Kind Toevoegen
                           </button>
                         </div>
 
-                        <div className="mt-8 p-4 bg-indigo-50 rounded-xl border border-indigo-100">
-                          <h4 className="text-sm font-bold text-indigo-900 flex items-center gap-2">
+                        <div className="mt-8 p-4 bg-accent-50 rounded-xl border border-accent-100">
+                          <h4 className="text-sm font-bold text-accent-900 flex items-center gap-2">
                             <Trophy size={16} />
                             Oefentip
                           </h4>
-                          <p className="text-xs text-indigo-700 mt-1 leading-relaxed">
+                          <p className="text-xs text-accent-700 mt-1 leading-relaxed">
                             Probeer elke dag minstens 15 minuten te oefenen. Consistentie is de sleutel tot succes!
                           </p>
                         </div>
@@ -463,12 +469,12 @@ export default function App() {
                       <div className="space-y-8">
                         <div className="flex items-center justify-between">
                           <h2 className="text-lg font-bold flex items-center gap-2">
-                            <BookOpen size={20} className="text-indigo-500" />
+                            <BookOpen size={20} className="text-accent-500" />
                             Liedjes & Boeken
                           </h2>
                           <button 
                             onClick={() => setShowSettings(false)}
-                            className="text-sm text-indigo-600 font-medium hover:underline"
+                            className="text-sm text-accent-600 font-medium hover:underline"
                           >
                             Klaar
                           </button>
@@ -485,7 +491,7 @@ export default function App() {
                                 onClick={() => setDataInstrumentId(i.id)}
                                 className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${
                                   dataInstrument?.id === i.id
-                                    ? 'bg-indigo-600 text-white shadow-sm'
+                                    ? 'bg-accent-600 text-white shadow-sm'
                                     : 'bg-zinc-100 text-zinc-500 hover:text-zinc-800'
                                 }`}
                               >
@@ -521,7 +527,7 @@ export default function App() {
                                 ) : (
                                   <>
                                     <span className="flex-1 text-sm font-medium">{book.title}</span>
-                                    <button onClick={() => setEditingBookId(book.id)} className="p-1 text-zinc-400 hover:text-indigo-600"><Edit2 size={16}/></button>
+                                    <button onClick={() => setEditingBookId(book.id)} className="p-1 text-zinc-400 hover:text-accent-600"><Edit2 size={16}/></button>
                                     <button onClick={() => deleteBook(book.id)} className="p-1 text-zinc-400 hover:text-red-600"><Trash2 size={16}/></button>
                                   </>
                                 )}
@@ -532,9 +538,9 @@ export default function App() {
                                 value={newBookTitle}
                                 onChange={(e) => setNewBookTitle(e.target.value)}
                                 placeholder="Nieuw boek..."
-                                className="flex-1 text-sm px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                className="flex-1 text-sm px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500/20"
                               />
-                              <button onClick={addBook} className="p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                              <button onClick={addBook} className="p-2 bg-accent-600 text-white rounded-lg hover:bg-accent-700 transition-colors">
                                 <Plus size={20} />
                               </button>
                             </div>
@@ -567,7 +573,7 @@ export default function App() {
                                       <span className="text-sm font-medium">{song.title}</span>
                                       <span className="text-[10px] text-zinc-400">{books.find(b => b.id === song.bookId)?.title}</span>
                                     </div>
-                                    <button onClick={() => setEditingSongId(song.id)} className="p-1 text-zinc-400 hover:text-indigo-600"><Edit2 size={16}/></button>
+                                    <button onClick={() => setEditingSongId(song.id)} className="p-1 text-zinc-400 hover:text-accent-600"><Edit2 size={16}/></button>
                                     <button onClick={() => deleteSong(song.id)} className="p-1 text-zinc-400 hover:text-red-600"><Trash2 size={16}/></button>
                                   </>
                                 )}
@@ -588,9 +594,9 @@ export default function App() {
                                   value={newSongTitle}
                                   onChange={(e) => setNewSongTitle(e.target.value)}
                                   placeholder="Nieuw liedje..."
-                                  className="flex-1 text-sm px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                  className="flex-1 text-sm px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500/20"
                                 />
-                                <button onClick={addSong} className="p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                                <button onClick={addSong} className="p-2 bg-accent-600 text-white rounded-lg hover:bg-accent-700 transition-colors">
                                   <Plus size={20} />
                                 </button>
                               </div>
@@ -603,12 +609,12 @@ export default function App() {
                       <div className="space-y-6">
                         <div className="flex items-center justify-between">
                           <h2 className="text-lg font-bold flex items-center gap-2">
-                            <Settings size={20} className="text-indigo-500" />
+                            <Settings size={20} className="text-accent-500" />
                             App Instellingen
                           </h2>
                           <button 
                             onClick={() => setShowSettings(false)}
-                            className="text-sm text-indigo-600 font-medium hover:underline"
+                            className="text-sm text-accent-600 font-medium hover:underline"
                           >
                             Klaar
                           </button>
@@ -617,7 +623,7 @@ export default function App() {
                         <div className="space-y-4">
                           <div className="flex items-center justify-between p-4 bg-zinc-50 rounded-2xl border border-zinc-100">
                             <div className="flex items-center gap-3">
-                              <div className={`p-2 rounded-xl transition-colors ${soundEnabled ? 'bg-indigo-100 text-indigo-600' : 'bg-zinc-200 text-zinc-500'}`}>
+                              <div className={`p-2 rounded-xl transition-colors ${soundEnabled ? 'bg-accent-100 text-accent-600' : 'bg-zinc-200 text-zinc-500'}`}>
                                 {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
                               </div>
                               <div>
@@ -627,7 +633,7 @@ export default function App() {
                             </div>
                             <button 
                               onClick={() => setSoundEnabled(!soundEnabled)}
-                              className={`w-12 h-6 rounded-full transition-colors relative ${soundEnabled ? 'bg-indigo-600' : 'bg-zinc-300'}`}
+                              className={`w-12 h-6 rounded-full transition-colors relative ${soundEnabled ? 'bg-accent-600' : 'bg-zinc-300'}`}
                             >
                               <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${soundEnabled ? 'left-7' : 'left-1'}`} />
                             </button>
@@ -635,7 +641,7 @@ export default function App() {
 
                           <div className="flex items-center justify-between p-4 bg-zinc-50 rounded-2xl border border-zinc-100">
                             <div className="flex items-center gap-3">
-                              <div className={`p-2 rounded-xl transition-colors ${voiceEnabled ? 'bg-indigo-100 text-indigo-600' : 'bg-zinc-200 text-zinc-500'}`}>
+                              <div className={`p-2 rounded-xl transition-colors ${voiceEnabled ? 'bg-accent-100 text-accent-600' : 'bg-zinc-200 text-zinc-500'}`}>
                                 {voiceEnabled ? <Mic size={20} /> : <MicOff size={20} />}
                               </div>
                               <div>
@@ -645,7 +651,7 @@ export default function App() {
                             </div>
                             <button 
                               onClick={() => setVoiceEnabled(!voiceEnabled)}
-                              className={`w-12 h-6 rounded-full transition-colors relative ${voiceEnabled ? 'bg-indigo-600' : 'bg-zinc-300'}`}
+                              className={`w-12 h-6 rounded-full transition-colors relative ${voiceEnabled ? 'bg-accent-600' : 'bg-zinc-300'}`}
                             >
                               <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${voiceEnabled ? 'left-7' : 'left-1'}`} />
                             </button>
@@ -675,7 +681,7 @@ export default function App() {
                 >
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-bold flex items-center gap-2">
-                      <Music size={20} className="text-indigo-500" />
+                      <Music size={20} className="text-accent-500" />
                       Liedjes selecteren
                       {activeInstrument && (
                         <span className="hidden sm:flex text-sm font-medium text-zinc-400 items-center gap-1">· <activeInstrument.icon size={14} /> {activeInstrument.name}</span>

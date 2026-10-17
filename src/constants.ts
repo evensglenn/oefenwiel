@@ -3,8 +3,8 @@ import { Book, Instrument, Song } from "./types";
 
 // Vaste lijst: nieuwe instrumenten worden hier in de code toegevoegd
 export const INSTRUMENTS: Instrument[] = [
-  { id: "gitaar", name: "Gitaar", icon: Guitar },
-  { id: "piano", name: "Piano", icon: Piano },
+  { id: "gitaar", name: "Gitaar", icon: Guitar, themeColor: "#c2410c", confettiColors: ["#f97316", "#facc15", "#ef4444"] },
+  { id: "piano", name: "Piano", icon: Piano, themeColor: "#2563eb", confettiColors: ["#3b82f6", "#22d3ee", "#a855f7"] },
 ];
 
 export const INITIAL_BOOKS: Book[] = [
