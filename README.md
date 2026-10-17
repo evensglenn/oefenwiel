@@ -1,20 +1,14 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Oefenwiel Gitaar
 
-# Run and deploy your AI Studio app
+Een interactief gitaar-oefenwiel voor kinderen met Suzuki-repertoire.
 
-This contains everything you need to run your app locally.
+Er is geen API-key of backend nodig: de app draait volledig in de browser.
 
-View your app in AI Studio: https://ai.studio/apps/8146fab3-ab2b-489d-90bd-0d2eff5d0a92
+## Lokaal draaien
 
-## Run Locally
+**Vereist:** Node.js
 
-**Prerequisites:**  Node.js
+1. `npm install`
+2. `npm run dev` en open http://localhost:3000/oefenwiel/
 
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+Bij elke push naar `main` wordt de app automatisch op GitHub Pages gezet.
