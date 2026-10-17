@@ -10,6 +10,7 @@ interface WheelProps {
   soundEnabled: boolean;
   voiceEnabled: boolean;
   instrumentIcon?: LucideIcon;
+  colors?: string[];
 }
 
 const COLORS = [
@@ -54,6 +55,7 @@ export const Wheel: React.FC<WheelProps> = ({
   soundEnabled,
   voiceEnabled,
   instrumentIcon: InstrumentIcon,
+  colors = COLORS,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -146,7 +148,10 @@ export const Wheel: React.FC<WheelProps> = ({
       ctx.moveTo(center, center);
       ctx.arc(center, center, radius, angle, angle + sliceAngle);
       ctx.closePath();
-      const color = COLORS[i % COLORS.length];
+      // Laatste vak mag niet dezelfde kleur krijgen als het eerste, waar ze elkaar raken
+      let colorIndex = i % colors.length;
+      if (i === items.length - 1 && i > 0 && colorIndex === 0) colorIndex = 2 % colors.length;
+      const color = colors[colorIndex];
       ctx.fillStyle = color;
       ctx.fill();
       ctx.strokeStyle = '#fff';
@@ -178,7 +183,7 @@ export const Wheel: React.FC<WheelProps> = ({
     // Draw center pin
     ctx.beginPath();
     ctx.arc(center, center, pinRadius, 0, 2 * Math.PI);
-    ctx.fillStyle = '#333';
+    ctx.fillStyle = getComputedStyle(canvas).getPropertyValue('--accent-900').trim() || '#333';
     ctx.fill();
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 3;
@@ -187,7 +192,7 @@ export const Wheel: React.FC<WheelProps> = ({
 
   useEffect(() => {
     drawWheel(rotation);
-  }, [items, rotation, size, fontsReady]);
+  }, [items, rotation, size, fontsReady, colors]);
 
   const announceWinner = (text: string) => {
     if (!window.speechSynthesis || !voiceEnabled) return;
@@ -267,12 +272,12 @@ export const Wheel: React.FC<WheelProps> = ({
         {/* Wijzer bovenaan */}
         <div className="absolute left-1/2 -top-3 sm:-top-4 -translate-x-1/2 z-20 drop-shadow-md">
           <div
-            className="w-8 h-10 sm:w-10 sm:h-12 bg-zinc-800"
+            className="w-8 h-10 sm:w-10 sm:h-12 bg-accent-900"
             style={{ clipPath: 'polygon(0% 0%, 100% 0%, 50% 100%)' }}
           ></div>
         </div>
 
-        <div className="bg-white p-2 sm:p-4 rounded-full shadow-2xl border-4 sm:border-8 border-zinc-800">
+        <div className="bg-white p-2 sm:p-4 rounded-full shadow-2xl border-4 sm:border-8 border-accent-900">
           <canvas
             ref={canvasRef}
             width={Math.round(size * (window.devicePixelRatio || 1))}

@@ -332,6 +332,7 @@ export default function App() {
                 soundEnabled={soundEnabled}
                 voiceEnabled={voiceEnabled}
                 instrumentIcon={activeInstrument?.icon}
+                colors={activeInstrument?.wheelColors}
               />
             ) : (
               <div className="text-center p-12 bg-white rounded-3xl border-2 border-dashed border-zinc-200 max-w-md">
