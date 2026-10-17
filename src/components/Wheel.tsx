@@ -10,7 +10,6 @@ interface WheelProps {
   soundEnabled: boolean;
   voiceEnabled: boolean;
   instrumentIcon?: LucideIcon;
-  colors?: string[];
 }
 
 const COLORS = [
@@ -31,10 +30,12 @@ const luminance = (hex: string) => {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 };
 
-// Witte tekst zodra die voor vette tekst leesbaar is (contrast >= 3), anders donker
+// Kies per vak de tekstkleur (wit of donker) met het meeste contrast
 const textColorFor = (hex: string) => {
-  const whiteContrast = 1.05 / (luminance(hex) + 0.05);
-  return whiteContrast >= 3 ? '#fff' : DARK_TEXT;
+  const l = luminance(hex);
+  const whiteContrast = 1.05 / (l + 0.05);
+  const darkContrast = (l + 0.05) / (luminance(DARK_TEXT) + 0.05);
+  return whiteContrast >= darkContrast ? '#fff' : DARK_TEXT;
 };
 
 const splitWinner = (text: string) => {
@@ -53,7 +54,6 @@ export const Wheel: React.FC<WheelProps> = ({
   soundEnabled,
   voiceEnabled,
   instrumentIcon: InstrumentIcon,
-  colors = COLORS,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -101,8 +101,8 @@ export const Wheel: React.FC<WheelProps> = ({
       for (let entry of entries) {
         const { width } = entry.contentRect;
         // On mobile, we want it to be responsive but not too tiny
-        // On desktop, we cap it at 440
-        const newSize = Math.min(width - 16, 440);
+        // On desktop, we cap it at 400
+        const newSize = Math.min(width - 32, 400);
         if (newSize > 0) {
           setSize(newSize);
         }
@@ -130,35 +130,26 @@ export const Wheel: React.FC<WheelProps> = ({
     const dpr = window.devicePixelRatio || 1;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    const styles = getComputedStyle(canvas);
-    const rimColor = styles.getPropertyValue('--accent-700').trim() || '#3f3f46';
-    const pinColor = styles.getPropertyValue('--accent-900').trim() || '#27272a';
-
     const canvasSize = size;
     const center = canvasSize / 2;
-    const outerRadius = canvasSize / 2 - 2;
-    const rimWidth = Math.max(12, canvasSize * 0.055);
-    const radius = outerRadius - rimWidth;
+    const radius = canvasSize / 2 - 10;
     const sliceAngle = (2 * Math.PI) / items.length;
-    const pinRadius = canvasSize / 18;
+    const pinRadius = canvasSize / 25;
 
     ctx.clearRect(0, 0, canvasSize, canvasSize);
 
     items.forEach((item, i) => {
       const angle = currentRotation + i * sliceAngle;
-
+      
       // Draw slice
       ctx.beginPath();
       ctx.moveTo(center, center);
       ctx.arc(center, center, radius, angle, angle + sliceAngle);
       ctx.closePath();
-      // Laatste vak mag niet dezelfde kleur krijgen als het eerste, waar ze elkaar raken
-      let colorIndex = i % colors.length;
-      if (i === items.length - 1 && i > 0 && colorIndex === 0) colorIndex = 2 % colors.length;
-      const color = colors[colorIndex];
+      const color = COLORS[i % COLORS.length];
       ctx.fillStyle = color;
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.strokeStyle = '#fff';
       ctx.lineWidth = 2;
       ctx.stroke();
 
@@ -172,7 +163,7 @@ export const Wheel: React.FC<WheelProps> = ({
       const fontSize = Math.max(9, Math.floor(Math.min(canvasSize / 28, sliceAngle * radius * 0.5)));
       ctx.font = `800 ${fontSize}px ${WHEEL_FONT}`;
       // Kort de tekst in tot hij tussen de rand en de middenpin past
-      const maxWidth = radius - 12 - pinRadius - 14;
+      const maxWidth = radius - 15 - pinRadius - 8;
       // Het boek staat op de resultaatkaart; op het wiel enkel de titel
       const label = splitWinner(item).song;
       let displayItem = label;
@@ -180,64 +171,14 @@ export const Wheel: React.FC<WheelProps> = ({
         displayItem = displayItem.slice(0, -1);
       }
       if (displayItem !== label) displayItem = displayItem.trimEnd() + '…';
-      ctx.fillText(displayItem, radius - 12, fontSize / 3);
+      ctx.fillText(displayItem, radius - 15, fontSize / 3);
       ctx.restore();
     });
 
-    // Diepte: licht in het midden, iets donkerder naar de rand
-    const shade = ctx.createRadialGradient(center, center, pinRadius, center, center, radius);
-    shade.addColorStop(0, 'rgba(255, 255, 255, 0.22)');
-    shade.addColorStop(0.6, 'rgba(255, 255, 255, 0)');
-    shade.addColorStop(1, 'rgba(0, 0, 0, 0.14)');
-    ctx.beginPath();
-    ctx.arc(center, center, radius, 0, 2 * Math.PI);
-    ctx.fillStyle = shade;
-    ctx.fill();
-
-    // Rand met lampjes, zoals bij een spelshow
-    ctx.beginPath();
-    ctx.arc(center, center, outerRadius - rimWidth / 2, 0, 2 * Math.PI);
-    ctx.strokeStyle = rimColor;
-    ctx.lineWidth = rimWidth;
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(center, center, radius, 0, 2 * Math.PI);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    const lightCount = 20;
-    // Tijdens het draaien springen de lampjes om met de rotatie mee
-    const phase = Math.floor(currentRotation / (Math.PI / 10)) % 2;
-    for (let j = 0; j < lightCount; j++) {
-      const a = (j / lightCount) * 2 * Math.PI;
-      const lit = (j + phase) % 2 === 0;
-      ctx.beginPath();
-      ctx.arc(
-        center + Math.cos(a) * (outerRadius - rimWidth / 2),
-        center + Math.sin(a) * (outerRadius - rimWidth / 2),
-        rimWidth * 0.22, 0, 2 * Math.PI
-      );
-      ctx.fillStyle = lit ? '#fef3c7' : 'rgba(255, 255, 255, 0.35)';
-      ctx.shadowColor = lit ? 'rgba(253, 224, 71, 0.9)' : 'transparent';
-      ctx.shadowBlur = lit ? rimWidth * 0.6 : 0;
-      ctx.fill();
-    }
-    ctx.shadowBlur = 0;
-    ctx.shadowColor = 'transparent';
-
-    // Glanzende middenpin
-    const gloss = ctx.createRadialGradient(
-      center - pinRadius * 0.35, center - pinRadius * 0.35, pinRadius * 0.1,
-      center, center, pinRadius
-    );
-    gloss.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
-    gloss.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    // Draw center pin
     ctx.beginPath();
     ctx.arc(center, center, pinRadius, 0, 2 * Math.PI);
-    ctx.fillStyle = pinColor;
-    ctx.fill();
-    ctx.fillStyle = gloss;
+    ctx.fillStyle = '#333';
     ctx.fill();
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 3;
@@ -246,7 +187,7 @@ export const Wheel: React.FC<WheelProps> = ({
 
   useEffect(() => {
     drawWheel(rotation);
-  }, [items, rotation, size, fontsReady, colors]);
+  }, [items, rotation, size, fontsReady]);
 
   const announceWinner = (text: string) => {
     if (!window.speechSynthesis || !voiceEnabled) return;
@@ -324,14 +265,14 @@ export const Wheel: React.FC<WheelProps> = ({
     <div ref={containerRef} className="flex flex-col items-center w-full max-w-[450px]">
       <div className="relative">
         {/* Wijzer bovenaan */}
-        <div className="absolute left-1/2 -top-3 sm:-top-4 -translate-x-1/2 z-20 drop-shadow-[0_2px_3px_rgba(0,0,0,0.35)]">
+        <div className="absolute left-1/2 -top-3 sm:-top-4 -translate-x-1/2 z-20 drop-shadow-md">
           <div
-            className="w-8 h-10 sm:w-10 sm:h-12 bg-amber-400"
+            className="w-8 h-10 sm:w-10 sm:h-12 bg-zinc-800"
             style={{ clipPath: 'polygon(0% 0%, 100% 0%, 50% 100%)' }}
           ></div>
         </div>
 
-        <div className="rounded-full shadow-2xl">
+        <div className="bg-white p-2 sm:p-4 rounded-full shadow-2xl border-4 sm:border-8 border-zinc-800">
           <canvas
             ref={canvasRef}
             width={Math.round(size * (window.devicePixelRatio || 1))}

@@ -7,8 +7,6 @@ export interface Instrument {
   // Hoofdkleur (statusbalk) en confettikleuren van het thema
   themeColor: string;
   confettiColors: string[];
-  // Vakkleuren van het wiel: palet rond de themakleur
-  wheelColors: string[];
 }
 
 export interface Song {
