@@ -1,5 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 
+export type ThemePreference = 'light' | 'dark' | 'auto';
+
 export interface Instrument {
   id: string;
   name: string;

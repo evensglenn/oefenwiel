@@ -50,11 +50,11 @@ export const SongSelector: React.FC<SongSelectorProps> = ({
         const isPartial = isBookPartiallySelected(book.id);
 
         return (
-          <div key={book.id} className="border border-zinc-200 rounded-xl overflow-hidden bg-white shadow-sm">
-            <div className="flex items-center p-4 hover:bg-zinc-50 transition-colors cursor-pointer">
+          <div key={book.id} className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden bg-white dark:bg-zinc-900 shadow-sm">
+            <div className="flex items-center p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer">
               <button 
                 onClick={() => toggleBookExpand(book.id)}
-                className="p-1 hover:bg-zinc-200 rounded mr-2"
+                className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded mr-2"
               >
                 {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
               </button>
@@ -64,7 +64,7 @@ export const SongSelector: React.FC<SongSelectorProps> = ({
                 onClick={() => toggleBookExpand(book.id)}
               >
                 <BookIcon size={18} className="text-accent-500 mr-3" />
-                <span className="font-semibold text-zinc-800">{book.title}</span>
+                <span className="font-semibold text-zinc-800 dark:text-zinc-100">{book.title}</span>
                 <span className="ml-2 text-xs text-zinc-400">({bookSongs.length} liedjes)</span>
               </div>
 
@@ -75,11 +75,11 @@ export const SongSelector: React.FC<SongSelectorProps> = ({
                 }}
                 className={`w-6 h-6 rounded flex items-center justify-center border-2 transition-all
                   ${isFull ? 'bg-accent-600 border-accent-600 text-white' : 
-                    isPartial ? 'bg-accent-100 border-accent-600 text-accent-600' : 
-                    'border-zinc-300 bg-white'}`}
+                    isPartial ? 'bg-accent-100 border-accent-600 text-accent-600 dark:bg-accent-900/40 dark:border-accent-400' : 
+                    'border-zinc-300 bg-white dark:border-zinc-600 dark:bg-zinc-800'}`}
               >
                 {isFull && <Check size={14} strokeWidth={3} />}
-                {isPartial && <div className="w-2 h-0.5 bg-accent-600 rounded-full" />}
+                {isPartial && <div className="w-2 h-0.5 bg-accent-600 dark:bg-accent-400 rounded-full" />}
               </button>
             </div>
 
@@ -89,7 +89,7 @@ export const SongSelector: React.FC<SongSelectorProps> = ({
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  className="overflow-hidden bg-zinc-50/50"
+                  className="overflow-hidden bg-zinc-50/50 dark:bg-zinc-950/40"
                 >
                   <div className="p-2 pl-8 sm:pl-12 space-y-1">
                     {bookSongs.map((song) => {
@@ -98,14 +98,14 @@ export const SongSelector: React.FC<SongSelectorProps> = ({
                         <div 
                           key={song.id}
                           onClick={() => onToggleSong(song.id)}
-                          className="flex items-center p-2 rounded-lg hover:bg-white hover:shadow-sm transition-all cursor-pointer group"
+                          className="flex items-center p-2 rounded-lg hover:bg-white dark:hover:bg-zinc-800 hover:shadow-sm transition-all cursor-pointer group"
                         >
                           <Music size={14} className={`mr-3 ${isSelected ? 'text-accent-500' : 'text-zinc-400'}`} />
-                          <span className={`flex-1 text-sm ${isSelected ? 'text-zinc-900 font-medium' : 'text-zinc-500'}`}>
+                          <span className={`flex-1 text-sm ${isSelected ? 'text-zinc-900 dark:text-zinc-100 font-medium' : 'text-zinc-500 dark:text-zinc-400'}`}>
                             {song.title}
                           </span>
                           <div className={`w-5 h-5 rounded border transition-all flex items-center justify-center
-                            ${isSelected ? 'bg-accent-500 border-accent-500 text-white' : 'border-zinc-300 group-hover:border-zinc-400'}`}>
+                            ${isSelected ? 'bg-accent-500 border-accent-500 text-white' : 'border-zinc-300 group-hover:border-zinc-400 dark:border-zinc-600 dark:group-hover:border-zinc-500'}`}>
                             {isSelected && <Check size={12} strokeWidth={3} />}
                           </div>
                         </div>

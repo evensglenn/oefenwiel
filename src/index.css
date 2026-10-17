@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Dark mode volgt het data-theme-attribuut op <html> (gezet vanuit React op
+   basis van de keuze licht/donker/automatisch), niet rechtstreeks
+   prefers-color-scheme: zo volgt "automatisch" het toestel en kunnen
+   "licht"/"donker" dat overschrijven. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 @theme {
   --font-sans: "Nunito", ui-sans-serif, system-ui, sans-serif;
 }
@@ -51,4 +57,8 @@
   --accent-600: #047857;
   --accent-700: #065f46;
   --accent-900: #022c22;
+}
+
+html {
+  @apply bg-zinc-50 dark:bg-zinc-950;
 }

@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Wheel } from './components/Wheel';
 import { SongSelector } from './components/SongSelector';
 import { INITIAL_BOOKS, INSTRUMENTS, INITIAL_SONGS } from './constants';
-import { Profile, Book, Song, LastResult } from './types';
-import { Users, Settings, Music, Trophy, Plus, Trash2, Edit2, Save, X, BookOpen, Volume2, VolumeX, Mic, MicOff, Check, ChevronDown } from 'lucide-react';
+import { Profile, Book, Song, LastResult, ThemePreference } from './types';
+import { Users, Settings, Music, Trophy, Plus, Trash2, Edit2, Save, X, BookOpen, Volume2, VolumeX, Mic, MicOff, Check, ChevronDown, Sun, Moon, Monitor } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -13,6 +13,14 @@ const SONGS_KEY = 'guitar_practice_songs_v6';
 const SOUND_KEY = 'guitar_practice_sound_v1';
 const LAST_RESULTS_KEY = 'guitar_practice_last_results_v1';
 const VOICE_KEY = 'guitar_practice_voice_v1';
+// Ook gelezen door het scriptje in index.html, zodat er bij het laden geen witte flits is
+const THEME_KEY = 'guitar_practice_theme_v1';
+
+const THEME_OPTIONS: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
+  { value: 'light', label: 'Licht', icon: Sun },
+  { value: 'auto', label: 'Automatisch', icon: Monitor },
+  { value: 'dark', label: 'Donker', icon: Moon },
+];
 
 // Data van vóór de instrumenten-uitbreiding was altijd gitaar
 const LEGACY_INSTRUMENT_ID = 'gitaar';
@@ -74,6 +82,11 @@ export default function App() {
     return saved ? JSON.parse(saved) : true;
   });
 
+  const [theme, setTheme] = useState<ThemePreference>(() => {
+    const saved = localStorage.getItem(THEME_KEY);
+    return saved ? JSON.parse(saved) : 'auto';
+  });
+
   // Editing State
   const [editingBookId, setEditingBookId] = useState<string | null>(null);
   const [editingSongId, setEditingSongId] = useState<string | null>(null);
@@ -105,6 +118,28 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem(VOICE_KEY, JSON.stringify(voiceEnabled));
   }, [voiceEnabled]);
+
+  useEffect(() => {
+    localStorage.setItem(THEME_KEY, JSON.stringify(theme));
+  }, [theme]);
+
+  // Licht/donker/automatisch toepassen op <html data-theme="...">
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    const applyResolvedTheme = () => {
+      const resolved = theme === 'auto' ? (mediaQuery.matches ? 'dark' : 'light') : theme;
+      document.documentElement.setAttribute('data-theme', resolved);
+      document.documentElement.style.colorScheme = resolved;
+    };
+
+    applyResolvedTheme();
+
+    if (theme === 'auto') {
+      mediaQuery.addEventListener('change', applyResolvedTheme);
+      return () => mediaQuery.removeEventListener('change', applyResolvedTheme);
+    }
+  }, [theme]);
 
   const activeProfile = useMemo(() => 
     profiles.find(p => p.id === activeProfileId) || profiles[0],
@@ -272,20 +307,47 @@ export default function App() {
     setEditingSongId(null);
   };
 
+  const themeToggle = (
+    <div className="inline-flex items-center p-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/60 dark:border-zinc-700/60">
+      {THEME_OPTIONS.map(opt => {
+        const Icon = opt.icon;
+        const isActive = theme === opt.value;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => setTheme(opt.value)}
+            aria-label={opt.label}
+            aria-pressed={isActive}
+            title={opt.label}
+            className={`p-1 rounded-full transition-colors ${
+              isActive
+                ? 'bg-white dark:bg-zinc-600 text-accent-600 dark:text-accent-300 shadow-sm'
+                : 'text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300'
+            }`}
+          >
+            <Icon size={12} />
+          </button>
+        );
+      })}
+    </div>
+  );
+
   return (
-    <div data-instrument={activeInstrument?.id} className="min-h-screen bg-zinc-50 text-zinc-900 font-sans">
+    <div data-instrument={activeInstrument?.id} className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 font-sans transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white border-b border-zinc-200 sticky top-0 z-30">
+      <header className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 sticky top-0 z-30">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-accent-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-accent-200">
+            <div className="w-10 h-10 bg-accent-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-accent-200 dark:shadow-none">
               <Music size={24} />
             </div>
             <h1 className="text-xl font-bold tracking-tight">Oefenwiel</h1>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4">
-            <div className="flex bg-zinc-100 p-1 rounded-lg overflow-hidden">
+            <div className="hidden sm:block">{themeToggle}</div>
+            <div className="flex bg-zinc-100 dark:bg-zinc-800 p-1 rounded-lg overflow-hidden">
               {profiles.map(p => (
                 <button
                   key={p.id}
@@ -293,8 +355,8 @@ export default function App() {
                   disabled={isSpinning}
                   className={`px-2 sm:px-4 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all truncate max-w-[80px] sm:max-w-[120px] disabled:cursor-not-allowed ${
                     activeProfileId === p.id 
-                      ? 'bg-white text-accent-600 shadow-sm' 
-                      : 'text-zinc-500 hover:text-zinc-800'
+                      ? 'bg-white dark:bg-zinc-700 text-accent-600 dark:text-accent-300 shadow-sm' 
+                      : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100'
                   }`}
                 >
                   {p.name}
@@ -304,7 +366,7 @@ export default function App() {
             <button 
               onClick={() => setShowSettings(!showSettings)}
               disabled={isSpinning}
-              className={`p-2 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${showSettings ? 'bg-accent-50 text-accent-600' : 'text-zinc-400 hover:bg-zinc-100'}`}
+              className={`p-2 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${showSettings ? 'bg-accent-50 text-accent-600 dark:bg-accent-900/40 dark:text-accent-300' : 'text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
             >
               <Settings size={20} />
             </button>
@@ -313,9 +375,14 @@ export default function App() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-4 sm:py-8">
+        {/* Op de telefoon is de header vol, dus daar staat de schakelaar net eronder */}
+        <div className="flex justify-end mb-2 sm:hidden">
+          {themeToggle}
+        </div>
+
         {!showSettings && profileInstruments.length > 1 && (
           <div className="flex items-center justify-center mb-4 sm:mb-6">
-            <div className="flex bg-white border border-zinc-200 p-1 rounded-xl shadow-sm">
+            <div className="flex bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-1 rounded-xl shadow-sm">
               {profileInstruments.map(i => (
                 <button
                   key={i.id}
@@ -324,7 +391,7 @@ export default function App() {
                   className={`px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 disabled:cursor-not-allowed ${
                     activeInstrument?.id === i.id
                       ? 'bg-accent-600 text-white shadow-sm'
-                      : 'text-zinc-500 hover:text-zinc-800'
+                      : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100'
                   }`}
                 >
                   <i.icon size={16} />
@@ -353,12 +420,12 @@ export default function App() {
                 instrumentIcon={activeInstrument?.icon}
               />
             ) : (
-              <div className="text-center p-12 bg-white rounded-3xl border-2 border-dashed border-zinc-200 max-w-md">
-                <div className="w-16 h-16 bg-zinc-100 rounded-full flex items-center justify-center mx-auto mb-4 text-zinc-400">
+              <div className="text-center p-12 bg-white dark:bg-zinc-900 rounded-3xl border-2 border-dashed border-zinc-200 dark:border-zinc-700 max-w-md">
+                <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4 text-zinc-400">
                   <Music size={32} />
                 </div>
-                <h3 className="text-lg font-bold text-zinc-800">Geen liedjes geselecteerd</h3>
-                <p className="text-zinc-500 mt-2">
+                <h3 className="text-lg font-bold text-zinc-800 dark:text-zinc-100">Geen liedjes geselecteerd</h3>
+                <p className="text-zinc-500 dark:text-zinc-400 mt-2">
                   {instrumentSongs.length > 0
                     ? `Selecteer liedjes uit de lijst aan de rechterkant om het ${activeInstrument?.name.toLowerCase()}wiel voor ${activeProfile.name} te vullen.`
                     : `Er zijn nog geen liedjes voor ${activeInstrument?.name.toLowerCase()}. Voeg ze toe via Instellingen → Liedjes & Boeken.`}
@@ -377,24 +444,24 @@ export default function App() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
-                  className="bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden"
+                  className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden"
                 >
-                  <div className="flex border-b border-zinc-100">
+                  <div className="flex border-b border-zinc-100 dark:border-zinc-800">
                     <button 
                       onClick={() => setActiveTab('profiles')}
-                      className={`flex-1 py-4 text-sm font-bold transition-colors ${activeTab === 'profiles' ? 'text-accent-600 border-b-2 border-accent-600' : 'text-zinc-400 hover:text-zinc-600'}`}
+                      className={`flex-1 py-4 text-sm font-bold transition-colors ${activeTab === 'profiles' ? 'text-accent-600 dark:text-accent-300 border-b-2 border-accent-600 dark:border-accent-400' : 'text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300'}`}
                     >
                       Profielen
                     </button>
                     <button 
                       onClick={() => setActiveTab('data')}
-                      className={`flex-1 py-4 text-sm font-bold transition-colors ${activeTab === 'data' ? 'text-accent-600 border-b-2 border-accent-600' : 'text-zinc-400 hover:text-zinc-600'}`}
+                      className={`flex-1 py-4 text-sm font-bold transition-colors ${activeTab === 'data' ? 'text-accent-600 dark:text-accent-300 border-b-2 border-accent-600 dark:border-accent-400' : 'text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300'}`}
                     >
                       Liedjes & Boeken
                     </button>
                     <button 
                       onClick={() => setActiveTab('settings')}
-                      className={`flex-1 py-4 text-sm font-bold transition-colors ${activeTab === 'settings' ? 'text-accent-600 border-b-2 border-accent-600' : 'text-zinc-400 hover:text-zinc-600'}`}
+                      className={`flex-1 py-4 text-sm font-bold transition-colors ${activeTab === 'settings' ? 'text-accent-600 dark:text-accent-300 border-b-2 border-accent-600 dark:border-accent-400' : 'text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300'}`}
                     >
                       Instellingen
                     </button>
@@ -410,7 +477,7 @@ export default function App() {
                           </h2>
                           <button 
                             onClick={() => setShowSettings(false)}
-                            className="text-sm text-accent-600 font-medium hover:underline"
+                            className="text-sm text-accent-600 dark:text-accent-300 font-medium hover:underline"
                           >
                             Klaar
                           </button>
@@ -437,7 +504,7 @@ export default function App() {
                                 type="text"
                                 value={p.name}
                                 onChange={(e) => updateProfileName(p.id, e.target.value)}
-                                className="w-full px-4 py-2 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-500 transition-all"
+                                className="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-500 transition-all"
                                 placeholder="Naam invoeren..."
                               />
                               <div className="flex flex-wrap gap-2">
@@ -447,13 +514,14 @@ export default function App() {
                                   return (
                                     <button
                                       key={i.id}
+                                      data-instrument={i.id}
                                       onClick={() => toggleProfileInstrument(p.id, i.id)}
                                       disabled={isLast}
                                       title={isLast ? 'Elk kind speelt minstens één instrument' : undefined}
                                       className={`px-3 py-1 rounded-full text-xs font-bold border transition-all flex items-center gap-1 disabled:cursor-not-allowed ${
                                         plays
                                           ? 'bg-accent-600 border-accent-600 text-white'
-                                          : 'bg-white border-zinc-200 text-zinc-400 hover:border-accent-300 hover:text-accent-500'
+                                          : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-400 hover:border-accent-300 hover:text-accent-500'
                                       }`}
                                     >
                                       {plays ? <Check size={12} strokeWidth={3} /> : <i.icon size={12} />}
@@ -467,25 +535,26 @@ export default function App() {
                           
                           <button 
                             onClick={addProfile}
-                            className="w-full py-3 border-2 border-dashed border-zinc-200 rounded-xl text-zinc-400 font-bold text-sm hover:border-accent-300 hover:text-accent-500 transition-all flex items-center justify-center gap-2"
+                            className="w-full py-3 border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-400 font-bold text-sm hover:border-accent-300 hover:text-accent-500 transition-all flex items-center justify-center gap-2"
                           >
                             <Plus size={18} />
                             Kind Toevoegen
                           </button>
                         </div>
 
-                        <div className="mt-8 p-4 bg-accent-50 rounded-xl border border-accent-100">
-                          <h4 className="text-sm font-bold text-accent-900 flex items-center gap-2">
+                        <div className="mt-8 p-4 bg-accent-50 dark:bg-accent-900/30 rounded-xl border border-accent-100 dark:border-accent-900/60">
+                          <h4 className="text-sm font-bold text-accent-900 dark:text-accent-200 flex items-center gap-2">
                             <Trophy size={16} />
                             Oefentip
                           </h4>
-                          <p className="text-xs text-accent-700 mt-1 leading-relaxed">
+                          <p className="text-xs text-accent-700 dark:text-accent-300 mt-1 leading-relaxed">
                             Probeer elke dag minstens 15 minuten te oefenen. Consistentie is de sleutel tot succes!
                           </p>
                         </div>
                       </div>
                     ) : activeTab === 'data' ? (
-                      <div className="space-y-8">
+                      // Kleurt mee met het instrument dat je hier beheert (piano groen, gitaar paars)
+                      <div data-instrument={dataInstrument?.id} className="space-y-8">
                         <div className="flex items-center justify-between">
                           <h2 className="text-lg font-bold flex items-center gap-2">
                             <BookOpen size={20} className="text-accent-500" />
@@ -493,7 +562,7 @@ export default function App() {
                           </h2>
                           <button 
                             onClick={() => setShowSettings(false)}
-                            className="text-sm text-accent-600 font-medium hover:underline"
+                            className="text-sm text-accent-600 dark:text-accent-300 font-medium hover:underline"
                           >
                             Klaar
                           </button>
@@ -511,7 +580,7 @@ export default function App() {
                                 className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${
                                   dataInstrument?.id === i.id
                                     ? 'bg-accent-600 text-white shadow-sm'
-                                    : 'bg-zinc-100 text-zinc-500 hover:text-zinc-800'
+                                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-100'
                                 }`}
                               >
                                 <i.icon size={16} />
@@ -531,12 +600,12 @@ export default function App() {
                               <p className="text-xs text-zinc-400">Nog geen boeken voor {dataInstrument?.name.toLowerCase()}.</p>
                             )}
                             {dataBooks.map(book => (
-                              <div key={book.id} className="flex items-center gap-2 bg-zinc-50 p-2 rounded-lg border border-zinc-100">
+                              <div key={book.id} className="flex items-center gap-2 bg-zinc-50 dark:bg-zinc-800 p-2 rounded-lg border border-zinc-100 dark:border-zinc-700">
                                 {editingBookId === book.id ? (
                                   <>
                                     <input 
                                       autoFocus
-                                      className="flex-1 bg-white border border-zinc-200 rounded px-2 py-1 text-sm"
+                                      className="flex-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded px-2 py-1 text-sm"
                                       defaultValue={book.title}
                                       onBlur={(e) => updateBookTitle(book.id, e.target.value)}
                                       onKeyDown={(e) => e.key === 'Enter' && updateBookTitle(book.id, e.currentTarget.value)}
@@ -557,7 +626,7 @@ export default function App() {
                                 value={newBookTitle}
                                 onChange={(e) => setNewBookTitle(e.target.value)}
                                 placeholder="Nieuw boek..."
-                                className="flex-1 text-sm px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500/20"
+                                className="flex-1 text-sm px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500/20"
                               />
                               <button onClick={addBook} className="p-2 bg-accent-600 text-white rounded-lg hover:bg-accent-700 transition-colors">
                                 <Plus size={20} />
@@ -574,12 +643,12 @@ export default function App() {
                           </h3>
                           <div className="space-y-2">
                             {dataSongs.map(song => (
-                              <div key={song.id} className="flex items-center gap-2 bg-zinc-50 p-2 rounded-lg border border-zinc-100">
+                              <div key={song.id} className="flex items-center gap-2 bg-zinc-50 dark:bg-zinc-800 p-2 rounded-lg border border-zinc-100 dark:border-zinc-700">
                                 {editingSongId === song.id ? (
                                   <>
                                     <input 
                                       autoFocus
-                                      className="flex-1 bg-white border border-zinc-200 rounded px-2 py-1 text-sm"
+                                      className="flex-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded px-2 py-1 text-sm"
                                       defaultValue={song.title}
                                       onBlur={(e) => updateSongTitle(song.id, e.target.value)}
                                       onKeyDown={(e) => e.key === 'Enter' && updateSongTitle(song.id, e.currentTarget.value)}
@@ -600,11 +669,11 @@ export default function App() {
                             ))}
                             
                             {dataBooks.length > 0 && (
-                            <div className="space-y-2 mt-4 pt-4 border-t border-zinc-100">
+                            <div className="space-y-2 mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
                               <select
                                 value={bookForNewSong}
                                 onChange={(e) => setSelectedBookForNewSong(e.target.value)}
-                                className="w-full text-sm px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none"
+                                className="w-full text-sm px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:outline-none"
                               >
                                 {dataBooks.map(b => <option key={b.id} value={b.id}>{b.title}</option>)}
                               </select>
@@ -613,7 +682,7 @@ export default function App() {
                                   value={newSongTitle}
                                   onChange={(e) => setNewSongTitle(e.target.value)}
                                   placeholder="Nieuw liedje..."
-                                  className="flex-1 text-sm px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500/20"
+                                  className="flex-1 text-sm px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500/20"
                                 />
                                 <button onClick={addSong} className="p-2 bg-accent-600 text-white rounded-lg hover:bg-accent-700 transition-colors">
                                   <Plus size={20} />
@@ -633,44 +702,44 @@ export default function App() {
                           </h2>
                           <button 
                             onClick={() => setShowSettings(false)}
-                            className="text-sm text-accent-600 font-medium hover:underline"
+                            className="text-sm text-accent-600 dark:text-accent-300 font-medium hover:underline"
                           >
                             Klaar
                           </button>
                         </div>
 
                         <div className="space-y-4">
-                          <div className="flex items-center justify-between p-4 bg-zinc-50 rounded-2xl border border-zinc-100">
+                          <div className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-800 rounded-2xl border border-zinc-100 dark:border-zinc-700">
                             <div className="flex items-center gap-3">
-                              <div className={`p-2 rounded-xl transition-colors ${soundEnabled ? 'bg-accent-100 text-accent-600' : 'bg-zinc-200 text-zinc-500'}`}>
+                              <div className={`p-2 rounded-xl transition-colors ${soundEnabled ? 'bg-accent-100 text-accent-600 dark:bg-accent-900/40 dark:text-accent-300' : 'bg-zinc-200 text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400'}`}>
                                 {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
                               </div>
                               <div>
                                 <p className="text-sm font-bold">Overwinningsgeluid</p>
-                                <p className="text-xs text-zinc-500">Speel een geluidje als het wiel stopt</p>
+                                <p className="text-xs text-zinc-500 dark:text-zinc-400">Speel een geluidje als het wiel stopt</p>
                               </div>
                             </div>
                             <button 
                               onClick={() => setSoundEnabled(!soundEnabled)}
-                              className={`w-12 h-6 rounded-full transition-colors relative ${soundEnabled ? 'bg-accent-600' : 'bg-zinc-300'}`}
+                              className={`w-12 h-6 rounded-full transition-colors relative ${soundEnabled ? 'bg-accent-600' : 'bg-zinc-300 dark:bg-zinc-600'}`}
                             >
                               <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${soundEnabled ? 'left-7' : 'left-1'}`} />
                             </button>
                           </div>
 
-                          <div className="flex items-center justify-between p-4 bg-zinc-50 rounded-2xl border border-zinc-100">
+                          <div className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-800 rounded-2xl border border-zinc-100 dark:border-zinc-700">
                             <div className="flex items-center gap-3">
-                              <div className={`p-2 rounded-xl transition-colors ${voiceEnabled ? 'bg-accent-100 text-accent-600' : 'bg-zinc-200 text-zinc-500'}`}>
+                              <div className={`p-2 rounded-xl transition-colors ${voiceEnabled ? 'bg-accent-100 text-accent-600 dark:bg-accent-900/40 dark:text-accent-300' : 'bg-zinc-200 text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400'}`}>
                                 {voiceEnabled ? <Mic size={20} /> : <MicOff size={20} />}
                               </div>
                               <div>
                                 <p className="text-sm font-bold">Liedje uitspreken</p>
-                                <p className="text-xs text-zinc-500">De stem vertelt welk liedje gekozen is</p>
+                                <p className="text-xs text-zinc-500 dark:text-zinc-400">De stem vertelt welk liedje gekozen is</p>
                               </div>
                             </div>
                             <button 
                               onClick={() => setVoiceEnabled(!voiceEnabled)}
-                              className={`w-12 h-6 rounded-full transition-colors relative ${voiceEnabled ? 'bg-accent-600' : 'bg-zinc-300'}`}
+                              className={`w-12 h-6 rounded-full transition-colors relative ${voiceEnabled ? 'bg-accent-600' : 'bg-zinc-300 dark:bg-zinc-600'}`}
                             >
                               <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${voiceEnabled ? 'left-7' : 'left-1'}`} />
                             </button>
@@ -692,7 +761,7 @@ export default function App() {
                   <button
                     onClick={() => setSongListOpen(!songListOpen)}
                     aria-expanded={songListOpen}
-                    className="lg:hidden w-full flex items-center justify-between gap-3 px-4 py-3 bg-white border border-zinc-200 rounded-2xl shadow-sm font-bold text-zinc-800"
+                    className="lg:hidden w-full flex items-center justify-between gap-3 px-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm font-bold text-zinc-800 dark:text-zinc-100"
                   >
                     <span className="flex items-center gap-2">
                       <Music size={20} className="text-accent-500" />
@@ -735,16 +804,16 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="max-w-5xl mx-auto px-4 py-16 mt-12 border-t border-zinc-200">
+      <footer className="max-w-5xl mx-auto px-4 py-16 mt-12 border-t border-zinc-200 dark:border-zinc-800">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
           <div className="space-y-3 max-w-sm">
-            <div className="flex items-center gap-2 text-zinc-900">
-              <div className="w-6 h-6 bg-zinc-100 rounded-md flex items-center justify-center">
-                <Music size={14} className="text-zinc-600" />
+            <div className="flex items-center gap-2 text-zinc-900 dark:text-zinc-100">
+              <div className="w-6 h-6 bg-zinc-100 dark:bg-zinc-800 rounded-md flex items-center justify-center">
+                <Music size={14} className="text-zinc-600 dark:text-zinc-400" />
               </div>
               <span className="font-bold tracking-tight">Oefenwiel</span>
             </div>
-            <p className="text-sm text-zinc-500 leading-relaxed">
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
               Een slimme oefentool die oefenen leuker maakt door variatie en spelplezier te combineren.
             </p>
           </div>
@@ -768,6 +837,9 @@ export default function App() {
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: #d4d4d8;
+        }
+        [data-theme="dark"] .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #3f3f46;
         }
       `}</style>
     </div>

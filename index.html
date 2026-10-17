@@ -19,6 +19,16 @@
     
     <link rel="manifest" href="./manifest.json" />
 
+    <!-- Thema meteen zetten, vóór React laadt, zodat donker niet eerst wit flitst -->
+    <script>
+      try {
+        var t = JSON.parse(localStorage.getItem('guitar_practice_theme_v1') || '"auto"');
+        if (t === 'auto') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', t);
+        document.documentElement.style.colorScheme = t;
+      } catch (e) {}
+    </script>
+
     <!-- Lettertype -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
