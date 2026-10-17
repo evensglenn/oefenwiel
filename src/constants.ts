@@ -1,10 +1,18 @@
-import { Book, Song } from "./types";
+import { Guitar, Piano } from "lucide-react";
+import { Book, Instrument, Song } from "./types";
+
+// Vaste lijst: nieuwe instrumenten worden hier in de code toegevoegd
+export const INSTRUMENTS: Instrument[] = [
+  { id: "gitaar", name: "Gitaar", icon: Guitar },
+  { id: "piano", name: "Piano", icon: Piano },
+];
 
 export const INITIAL_BOOKS: Book[] = [
-  { id: "suzuki-1", title: "Suzuki boek 1" },
-  { id: "suzuki-2", title: "Suzuki boek 2" },
-  { id: "suzuki-3", title: "Suzuki boek 3" },
-  { id: "andere", title: "Andere" },
+  { id: "suzuki-1", instrumentId: "gitaar", title: "Suzuki boek 1" },
+  { id: "suzuki-2", instrumentId: "gitaar", title: "Suzuki boek 2" },
+  { id: "suzuki-3", instrumentId: "gitaar", title: "Suzuki boek 3" },
+  { id: "andere", instrumentId: "gitaar", title: "Andere" },
+  { id: "piano-1", instrumentId: "piano", title: "Piano boek 1" },
 ];
 
 export const INITIAL_SONGS: Song[] = [

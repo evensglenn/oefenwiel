@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Wheel } from './components/Wheel';
 import { SongSelector } from './components/SongSelector';
-import { INITIAL_BOOKS, INITIAL_SONGS } from './constants';
+import { INITIAL_BOOKS, INSTRUMENTS, INITIAL_SONGS } from './constants';
 import { Profile, Book, Song } from './types';
-import { Users, Settings, Music, Trophy, Plus, Trash2, Edit2, Save, X, BookOpen, Volume2, VolumeX, Mic, MicOff } from 'lucide-react';
+import { Users, Settings, Music, Trophy, Plus, Trash2, Edit2, Save, X, BookOpen, Volume2, VolumeX, Mic, MicOff, Check } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -13,11 +13,20 @@ const SONGS_KEY = 'guitar_practice_songs_v6';
 const SOUND_KEY = 'guitar_practice_sound_v1';
 const VOICE_KEY = 'guitar_practice_voice_v1';
 
+// Data van vóór de instrumenten-uitbreiding was altijd gitaar
+const LEGACY_INSTRUMENT_ID = 'gitaar';
+
 export default function App() {
   // Data State
   const [books, setBooks] = useState<Book[]>(() => {
     const saved = localStorage.getItem(BOOKS_KEY);
-    return saved ? JSON.parse(saved) : INITIAL_BOOKS;
+    if (!saved) return INITIAL_BOOKS;
+    const parsed: Book[] = JSON.parse(saved);
+    if (parsed.every(b => b.instrumentId)) return parsed;
+    // Migratie: bestaande boeken horen bij gitaar, en voeg een leeg pianoboek toe
+    const migrated = parsed.map(b => ({ ...b, instrumentId: b.instrumentId || LEGACY_INSTRUMENT_ID }));
+    const pianoBooks = INITIAL_BOOKS.filter(b => b.instrumentId !== LEGACY_INSTRUMENT_ID && !migrated.some(m => m.id === b.id));
+    return [...migrated, ...pianoBooks];
   });
 
   const [songs, setSongs] = useState<Song[]>(() => {
@@ -27,14 +36,22 @@ export default function App() {
 
   const [profiles, setProfiles] = useState<Profile[]>(() => {
     const saved = localStorage.getItem(PROFILES_KEY);
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      const parsed: Profile[] = JSON.parse(saved);
+      return parsed.map(p => ({
+        ...p,
+        instrumentIds: p.instrumentIds?.length ? p.instrumentIds : [LEGACY_INSTRUMENT_ID],
+      }));
+    }
     return [
-      { id: 'kind-1', name: 'Seppe', selectedSongIds: INITIAL_SONGS.map(s => s.id) },
-      { id: 'kind-2', name: 'Rune', selectedSongIds: INITIAL_SONGS.map(s => s.id) },
+      { id: 'kind-1', name: 'Seppe', instrumentIds: ['gitaar', 'piano'], selectedSongIds: INITIAL_SONGS.map(s => s.id) },
+      { id: 'kind-2', name: 'Rune', instrumentIds: ['gitaar'], selectedSongIds: INITIAL_SONGS.map(s => s.id) },
     ];
   });
-  
+
   const [activeProfileId, setActiveProfileId] = useState<string>(profiles[0].id);
+  const [activeInstrumentId, setActiveInstrumentId] = useState<string>(profiles[0].instrumentIds[0]);
+  const [dataInstrumentId, setDataInstrumentId] = useState<string>(profiles[0].instrumentIds[0]);
   const [isSpinning, setIsSpinning] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [activeTab, setActiveTab] = useState<'profiles' | 'data' | 'settings'>('profiles');
@@ -54,7 +71,7 @@ export default function App() {
   const [editingSongId, setEditingSongId] = useState<string | null>(null);
   const [newBookTitle, setNewBookTitle] = useState('');
   const [newSongTitle, setNewSongTitle] = useState('');
-  const [selectedBookForNewSong, setSelectedBookForNewSong] = useState<string>(books[0]?.id || '');
+  const [selectedBookForNewSong, setSelectedBookForNewSong] = useState<string>('');
 
   // Persistence
   useEffect(() => {
@@ -81,14 +98,37 @@ export default function App() {
     profiles.find(p => p.id === activeProfileId) || profiles[0],
   [profiles, activeProfileId]);
 
+  const profileInstruments = useMemo(() =>
+    INSTRUMENTS.filter(i => activeProfile.instrumentIds.includes(i.id)),
+  [activeProfile]);
+
+  // Valt terug op het eerste instrument als het kind het gekozen instrument niet speelt
+  const activeInstrument = profileInstruments.find(i => i.id === activeInstrumentId) || profileInstruments[0];
+
+  const instrumentBooks = useMemo(() =>
+    books.filter(b => b.instrumentId === activeInstrument?.id),
+  [books, activeInstrument]);
+
+  const instrumentSongs = useMemo(() =>
+    songs.filter(s => instrumentBooks.some(b => b.id === s.bookId)),
+  [songs, instrumentBooks]);
+
+  const selectedInstrumentSongCount = instrumentSongs.filter(s => activeProfile.selectedSongIds.includes(s.id)).length;
+
   const wheelItems = useMemo(() => {
-    return songs
+    return instrumentSongs
       .filter(s => activeProfile.selectedSongIds.includes(s.id))
       .map(s => {
         const book = books.find(b => b.id === s.bookId);
         return `${s.title} (${book?.title || '?'})`;
       });
-  }, [activeProfile, songs, books]);
+  }, [activeProfile, instrumentSongs, books]);
+
+  // Instrument dat beheerd wordt in het tabblad "Liedjes & Boeken"
+  const dataInstrument = INSTRUMENTS.find(i => i.id === dataInstrumentId) || INSTRUMENTS[0];
+  const dataBooks = books.filter(b => b.instrumentId === dataInstrument?.id);
+  const dataSongs = songs.filter(s => dataBooks.some(b => b.id === s.bookId));
+  const bookForNewSong = dataBooks.some(b => b.id === selectedBookForNewSong) ? selectedBookForNewSong : dataBooks[0]?.id || '';
 
   // Handlers
   const handleToggleSong = (songId: string) => {
@@ -128,10 +168,23 @@ export default function App() {
     setProfiles(prev => prev.map(p => p.id === id ? { ...p, name } : p));
   };
 
+  const toggleProfileInstrument = (profileId: string, instrumentId: string) => {
+    setProfiles(prev => prev.map(p => {
+      if (p.id !== profileId) return p;
+      if (p.instrumentIds.includes(instrumentId)) {
+        // Een kind speelt altijd minstens één instrument
+        if (p.instrumentIds.length <= 1) return p;
+        return { ...p, instrumentIds: p.instrumentIds.filter(id => id !== instrumentId) };
+      }
+      return { ...p, instrumentIds: [...p.instrumentIds, instrumentId] };
+    }));
+  };
+
   const addProfile = () => {
     const newProfile: Profile = {
       id: `kind-${Date.now()}`,
       name: `Kind ${profiles.length + 1}`,
+      instrumentIds: [INSTRUMENTS[0].id],
       selectedSongIds: songs.map(s => s.id)
     };
     setProfiles([...profiles, newProfile]);
@@ -148,11 +201,11 @@ export default function App() {
 
   // Book Management
   const addBook = () => {
-    if (!newBookTitle.trim()) return;
-    const newBook: Book = { id: `book-${Date.now()}`, title: newBookTitle };
+    if (!newBookTitle.trim() || !dataInstrument) return;
+    const newBook: Book = { id: `book-${Date.now()}`, title: newBookTitle, instrumentId: dataInstrument.id };
     setBooks([...books, newBook]);
     setNewBookTitle('');
-    if (!selectedBookForNewSong) setSelectedBookForNewSong(newBook.id);
+    if (!bookForNewSong) setSelectedBookForNewSong(newBook.id);
   };
 
   const deleteBook = (id: string) => {
@@ -173,8 +226,8 @@ export default function App() {
 
   // Song Management
   const addSong = () => {
-    if (!newSongTitle.trim() || !selectedBookForNewSong) return;
-    const newSong: Song = { id: `song-${Date.now()}`, title: newSongTitle, bookId: selectedBookForNewSong };
+    if (!newSongTitle.trim() || !bookForNewSong) return;
+    const newSong: Song = { id: `song-${Date.now()}`, title: newSongTitle, bookId: bookForNewSong };
     setSongs([...songs, newSong]);
     setNewSongTitle('');
     // Auto-select for all profiles
@@ -236,6 +289,29 @@ export default function App() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-4 sm:py-8">
+        {profileInstruments.length > 1 && (
+          <div className="flex items-center justify-center gap-3 mb-4 sm:mb-6">
+            <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Instrument</span>
+            <div className="flex bg-white border border-zinc-200 p-1 rounded-xl shadow-sm">
+              {profileInstruments.map(i => (
+                <button
+                  key={i.id}
+                  onClick={() => setActiveInstrumentId(i.id)}
+                  disabled={isSpinning}
+                  className={`px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 disabled:cursor-not-allowed ${
+                    activeInstrument?.id === i.id
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-zinc-500 hover:text-zinc-800'
+                  }`}
+                >
+                  <i.icon size={16} />
+                  {i.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           
           {/* Left Column: Wheel */}
@@ -256,7 +332,9 @@ export default function App() {
                 </div>
                 <h3 className="text-lg font-bold text-zinc-800">Geen liedjes geselecteerd</h3>
                 <p className="text-zinc-500 mt-2">
-                  Selecteer liedjes uit de lijst aan de rechterkant om het wiel voor {activeProfile.name} te vullen.
+                  {instrumentSongs.length > 0
+                    ? `Selecteer liedjes uit de lijst aan de rechterkant om het ${activeInstrument?.name.toLowerCase()}wiel voor ${activeProfile.name} te vullen.`
+                    : `Er zijn nog geen liedjes voor ${activeInstrument?.name.toLowerCase()}. Voeg ze toe via Instellingen → Liedjes & Boeken.`}
                 </p>
               </div>
             )}
@@ -334,6 +412,28 @@ export default function App() {
                                 className="w-full px-4 py-2 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                                 placeholder="Naam invoeren..."
                               />
+                              <div className="flex flex-wrap gap-2">
+                                {INSTRUMENTS.map(i => {
+                                  const plays = p.instrumentIds.includes(i.id);
+                                  const isLast = plays && p.instrumentIds.length <= 1;
+                                  return (
+                                    <button
+                                      key={i.id}
+                                      onClick={() => toggleProfileInstrument(p.id, i.id)}
+                                      disabled={isLast}
+                                      title={isLast ? 'Elk kind speelt minstens één instrument' : undefined}
+                                      className={`px-3 py-1 rounded-full text-xs font-bold border transition-all flex items-center gap-1 disabled:cursor-not-allowed ${
+                                        plays
+                                          ? 'bg-indigo-600 border-indigo-600 text-white'
+                                          : 'bg-white border-zinc-200 text-zinc-400 hover:border-indigo-300 hover:text-indigo-500'
+                                      }`}
+                                    >
+                                      {plays ? <Check size={12} strokeWidth={3} /> : <i.icon size={12} />}
+                                      {i.name}
+                                    </button>
+                                  );
+                                })}
+                              </div>
                             </div>
                           ))}
                           
@@ -371,13 +471,38 @@ export default function App() {
                           </button>
                         </div>
                         
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                            Boeken en liedjes beheren voor
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            {INSTRUMENTS.map(i => (
+                              <button
+                                key={i.id}
+                                onClick={() => setDataInstrumentId(i.id)}
+                                className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${
+                                  dataInstrument?.id === i.id
+                                    ? 'bg-indigo-600 text-white shadow-sm'
+                                    : 'bg-zinc-100 text-zinc-500 hover:text-zinc-800'
+                                }`}
+                              >
+                                <i.icon size={16} />
+                                {i.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
                         <section className="space-y-4">
                           <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
                             <BookOpen size={16} />
                             Boeken Beheren
                           </h3>
                           <div className="space-y-2">
-                            {books.map(book => (
+                            {dataBooks.length === 0 && (
+                              <p className="text-xs text-zinc-400">Nog geen boeken voor {dataInstrument?.name.toLowerCase()}.</p>
+                            )}
+                            {dataBooks.map(book => (
                               <div key={book.id} className="flex items-center gap-2 bg-zinc-50 p-2 rounded-lg border border-zinc-100">
                                 {editingBookId === book.id ? (
                                   <>
@@ -420,7 +545,7 @@ export default function App() {
                             Liedjes Beheren
                           </h3>
                           <div className="space-y-2">
-                            {songs.map(song => (
+                            {dataSongs.map(song => (
                               <div key={song.id} className="flex items-center gap-2 bg-zinc-50 p-2 rounded-lg border border-zinc-100">
                                 {editingSongId === song.id ? (
                                   <>
@@ -446,13 +571,14 @@ export default function App() {
                               </div>
                             ))}
                             
+                            {dataBooks.length > 0 && (
                             <div className="space-y-2 mt-4 pt-4 border-t border-zinc-100">
-                              <select 
-                                value={selectedBookForNewSong}
+                              <select
+                                value={bookForNewSong}
                                 onChange={(e) => setSelectedBookForNewSong(e.target.value)}
                                 className="w-full text-sm px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none"
                               >
-                                {books.map(b => <option key={b.id} value={b.id}>{b.title}</option>)}
+                                {dataBooks.map(b => <option key={b.id} value={b.id}>{b.title}</option>)}
                               </select>
                               <div className="flex gap-2">
                                 <input 
@@ -466,6 +592,7 @@ export default function App() {
                                 </button>
                               </div>
                             </div>
+                            )}
                           </div>
                         </section>
                       </div>
@@ -528,7 +655,7 @@ export default function App() {
                           </p>
                           <div className="flex justify-between mt-2 text-[10px] font-mono text-zinc-500">
                             <span>Versie</span>
-                            <span>v1.4.0</span>
+                            <span>v1.5.0</span>
                           </div>
                         </div>
                       </div>
@@ -547,16 +674,20 @@ export default function App() {
                     <h2 className="text-lg font-bold flex items-center gap-2">
                       <Music size={20} className="text-indigo-500" />
                       Liedjes selecteren
+                      {activeInstrument && (
+                        <span className="text-sm font-medium text-zinc-400 flex items-center gap-1">· <activeInstrument.icon size={14} /> {activeInstrument.name}</span>
+                      )}
                     </h2>
                     <div className="text-xs font-medium text-zinc-400">
-                      {activeProfile.selectedSongIds.length} / {songs.length} geselecteerd
+                      {selectedInstrumentSongCount} / {instrumentSongs.length} geselecteerd
                     </div>
                   </div>
 
                   <div className="pr-2">
-                    <SongSelector 
-                      books={books}
-                      songs={songs}
+                    <SongSelector
+                      key={activeInstrument?.id}
+                      books={instrumentBooks}
+                      songs={instrumentSongs}
                       selectedSongIds={activeProfile.selectedSongIds}
                       onToggleSong={handleToggleSong}
                       onToggleBook={handleToggleBook}
@@ -580,7 +711,7 @@ export default function App() {
               <span className="font-bold tracking-tight">Oefenwiel</span>
             </div>
             <p className="text-sm text-zinc-500 leading-relaxed">
-              Een slimme gitaar-tool die oefenen leuker maakt door variatie en spelplezier te combineren.
+              Een slimme oefentool die oefenen leuker maakt door variatie en spelplezier te combineren.
             </p>
           </div>
 
@@ -600,7 +731,7 @@ export default function App() {
                 Powered by AI
               </span>
               <span className="text-[10px] text-zinc-400 font-mono">
-                v1.4.0
+                v1.5.0
               </span>
             </div>
           </div>
